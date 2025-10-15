@@ -9,8 +9,8 @@
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.75",
-        "laravel/sanctum": "^2.11",
-        "laravel/tinker": "^2.5"
+        "laravel/tinker": "^2.5",
+        "tymon/jwt-auth": "^1.0"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
@@ -38,6 +38,8 @@
             "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
+            "@php artisan vendor:publish --provider=\"Tymon\\\\JWTAuth\\\\Providers\\\\LaravelServiceProvider\" --force",
+            "@php artisan jwt:secret --force",
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "post-root-package-install": [
