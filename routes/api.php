@@ -23,8 +23,7 @@ use App\Http\Controllers\PermisoController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
 
-
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::prefix('usuarios')->group(function () {
         Route::get('/', [UsuarioController::class, 'index']);
@@ -49,6 +48,9 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/', [PermisoController::class, 'store']);
         Route::put('/{id}', [PermisoController::class, 'update']);
         Route::delete('/{id}', [PermisoController::class, 'destroy']);
+
+        Route::post('/usuario', [PermisoController::class, 'asignarPermisoUsuario']);
+        Route::post('/rol', [PermisoController::class, 'asignarPermisoRol']);
     });
 });
 

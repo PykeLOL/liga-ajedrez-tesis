@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Usuario;
 use App\Models\Permiso;
+use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class PermisoController extends Controller
 {
@@ -20,7 +23,6 @@ class PermisoController extends Controller
                 'descripcion' => $usuario->descripcion,
             ];
         });
-        log::info("Permisos: " . json_encode($permisos));
 
         return response()->json($permisos);
     }
@@ -86,5 +88,91 @@ class PermisoController extends Controller
         $permiso->delete();
 
         return response()->json(['message' => 'Permiso eliminado correctamente'], 200);
+    }
+
+    public function asignarPermisoUsuario(Request $request)
+    {
+        try {
+            $request->validate([
+                'usuario_id' => 'required|numeric|exists:usuarios,id',
+                'permiso_id' => 'required|numeric|exists:permisos,id',
+            ]);
+
+            $usuario = Usuario::findOrFail($request->usuario_id);
+            $permiso = Permiso::findOrFail($request->permiso_id);
+
+            if ($usuario->permisos()->where('permiso_id', $permiso->id)->exists()) {
+                return response()->json([
+                    'message' => 'El permiso ya está asignado a este usuario.'
+                ], 409);
+            }
+
+            $usuario->permisos()->attach($permiso->id);
+
+            return response()->json([
+                'message' => 'Permiso asignado exitosamente al usuario.',
+                'usuario' => $usuario->nombre . " " . $usuario->apellido,
+                'permiso' => $permiso->nombre
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Credenciales de validación inválidas.',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'El usuario o permiso especificado no se encontró.',
+            ], 404);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Ocurrió un error inesperado al procesar la solicitud.',
+            ], 500);
+        }
+    }
+
+    public function asignarPermisoRol(Request $request)
+    {
+        try {
+            $request->validate([
+                'rol_id' => 'required|numeric|exists:roles,id',
+                'permiso_id' => 'required|numeric|exists:permisos,id',
+            ]);
+
+            $rol = Rol::findOrFail($request->rol_id);
+            $permiso = Permiso::findOrFail($request->permiso_id);
+
+            if ($rol->permisos()->where('permiso_id', $permiso->id)->exists()) {
+                return response()->json([
+                    'message' => 'El permiso ya está asignado a este rol.'
+                ], 409);
+            }
+
+            $rol->permisos()->attach($permiso->id);
+
+            return response()->json([
+                'message' => 'Permiso asignado exitosamente al rol.',
+                'rol' => $rol->nombre,
+                'permiso' => $permiso->nombre
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Credenciales de validación inválidas.',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'El rol o permiso especificado no se encontró.',
+            ], 404);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Ocurrió un error inesperado al procesar la solicitud.',
+            ], 500);
+        }
     }
 }

@@ -22,4 +22,9 @@ class Permiso extends Model
     {
         return $this->belongsToMany(Rol::class, 'roles_permisos', 'permiso_id', 'rol_id')->withTimestamps();
     }
+
+    public function usuarios()
+    {
+        return $this->belongsToMany(Rol::class, 'usuarios_permisos', 'permiso_id', 'usuario_id')->withTimestamps();
+    }
 }

@@ -6,17 +6,24 @@ use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            // aceptamos tanto "password" como "contraseña" en el body
-            'password' => 'sometimes|string',
-            'contraseña' => 'sometimes|string'
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Credenciales de validación inválidas.',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         $credentials = $request->only('email', 'password');
 
@@ -54,9 +61,6 @@ class AuthController extends Controller
     public function refresh()
     {
         try {
-            // Intenta refrescar el token.
-            // La librería tomará el token expirado de la cabecera Authorization.
-            // Si JWT_BLACKLIST_ENABLED=true, invalidará el token viejo.
             $newToken = auth('api')->refresh();
 
             return response()->json([
@@ -66,13 +70,10 @@ class AuthController extends Controller
             ]);
 
         } catch (TokenInvalidException $e) {
-            // El token es inválido (malformado, etc.)
             return response()->json(['error' => 'Token inválido.'], 401);
         } catch (TokenBlacklistedException $e) {
-            // El token ya está en la lista negra (ej. después de un logout)
             return response()->json(['error' => 'Token en lista negra.'], 401);
         } catch (\Exception $e) {
-            // Otra excepción, como TokenExpiredException (si pasó el refresh_ttl)
             return response()->json(['error' => 'Token no válido o expirado. Por favor, inicie sesión de nuevo.'], 401);
         }
     }
