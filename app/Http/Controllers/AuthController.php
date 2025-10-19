@@ -50,4 +50,30 @@ class AuthController extends Controller
     {
         return response()->json(auth()->user());
     }
+
+    public function refresh()
+    {
+        try {
+            // Intenta refrescar el token.
+            // La librería tomará el token expirado de la cabecera Authorization.
+            // Si JWT_BLACKLIST_ENABLED=true, invalidará el token viejo.
+            $newToken = auth('api')->refresh();
+
+            return response()->json([
+                'access_token' => $newToken,
+                'token_type'   => 'bearer',
+                'expires_in'   => auth('api')->factory()->getTTL() * 60
+            ]);
+
+        } catch (TokenInvalidException $e) {
+            // El token es inválido (malformado, etc.)
+            return response()->json(['error' => 'Token inválido.'], 401);
+        } catch (TokenBlacklistedException $e) {
+            // El token ya está en la lista negra (ej. después de un logout)
+            return response()->json(['error' => 'Token en lista negra.'], 401);
+        } catch (\Exception $e) {
+            // Otra excepción, como TokenExpiredException (si pasó el refresh_ttl)
+            return response()->json(['error' => 'Token no válido o expirado. Por favor, inicie sesión de nuevo.'], 401);
+        }
+    }
 }

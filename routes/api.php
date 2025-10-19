@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\PermisoController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -19,8 +21,11 @@ use App\Http\Controllers\UsuarioController;
 
 // Route::post('/usuarios', [UsuarioController::class, 'store']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/refresh', [AuthController::class, 'refresh']);
+
 
 Route::middleware('auth:api')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::prefix('usuarios')->group(function () {
         Route::get('/', [UsuarioController::class, 'index']);
         Route::get('/{id}', [UsuarioController::class, 'show']);
@@ -36,6 +41,14 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/', [RolController::class, 'store']);
         Route::put('/{id}', [RolController::class, 'update']);
         Route::delete('/{id}', [RolController::class, 'destroy']);
+    });
+
+    Route::prefix('permisos')->group(function () {
+        Route::get('/', [PermisoController::class, 'index']);
+        Route::get('/{id}', [PermisoController::class, 'show']);
+        Route::post('/', [PermisoController::class, 'store']);
+        Route::put('/{id}', [PermisoController::class, 'update']);
+        Route::delete('/{id}', [PermisoController::class, 'destroy']);
     });
 });
 

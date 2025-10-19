@@ -17,6 +17,7 @@ class UsuarioController extends Controller
             return [
                 'id' => $usuario->id,
                 'nombre' => $usuario->nombre,
+                'apellido' => $usuario->apellido,
                 'email' => $usuario->email,
                 'documento' => $usuario->documento,
                 'telefono' => $usuario->telefono,
@@ -41,6 +42,7 @@ class UsuarioController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
             'documento' => 'nullable|string|max:50',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:50',
@@ -59,6 +61,7 @@ class UsuarioController extends Controller
 
         $usuario = Usuario::create([
             'nombre' => $validated['nombre'],
+            'apellido' => $validated['apellido'],
             'documento' => $validated['documento'] ?? null,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? null,
@@ -78,6 +81,7 @@ class UsuarioController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
             'documento' => 'nullable|string|max:50',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:50',
@@ -85,20 +89,27 @@ class UsuarioController extends Controller
             'imagen' => 'nullable|image|max:2048',
         ]);
 
-        $path = null;
-        if ($request->hasFile('imagen')) {
-            $path = $request->file('imagen')->store('usuarios', 'public');
+        $imageName = null;
+        if ($request->imagen_base64) {
+            $imageData = $request->imagen_base64;
+            $image = str_replace('data:image/png;base64,', '', $imageData);
+            $image = str_replace('data:image/jpeg;base64,', '', $image);
+            $image = str_replace(' ', '+', $image);
+
+            $imageName = 'usuarios/' . uniqid() . '.png';
+            \Storage::disk('public')->put($imageName, base64_decode($image));
         }
 
         $usuario = Usuario::create([
             'nombre' => $validated['nombre'],
+            'apellido' => $validated['apellido'],
             'documento' => $validated['documento'] ?? null,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? null,
             'contraseña' => Hash::make('ligadeajedrez'), // Contraseña por defecto para admin
             'rol_id' => $validated['rol_id'] ?? null,
             'estado' => true,
-            'imagen_path' => $path,
+            'imagen_path' => $imageName,
         ]);
 
         return response()->json([
@@ -109,7 +120,6 @@ class UsuarioController extends Controller
 
     public function update(Request $request, $id)
     {
-        log::info("Request: " . json_encode($request->all()));
         $usuario = Usuario::find($id);
         if (!$usuario) {
             return response()->json(['message' => 'Usuario no encontrado'], 404);
@@ -117,6 +127,7 @@ class UsuarioController extends Controller
 
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
             'documento' => 'nullable|string|max:50',
             'email' => 'required|email|unique:usuarios,email,' . $id,
             'telefono' => 'nullable|string|max:50',
@@ -142,6 +153,7 @@ class UsuarioController extends Controller
 
         $usuario->update([
             'nombre' => $validated['nombre'],
+            'apellido' => $validated['apellido'],
             'documento' => $validated['documento'] ?? $usuario->documento,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? $usuario->telefono,

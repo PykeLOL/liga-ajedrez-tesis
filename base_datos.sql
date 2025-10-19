@@ -66,3 +66,15 @@ CREATE TABLE roles_permisos (
         ON DELETE CASCADE,
     CONSTRAINT unq_rol_permiso UNIQUE (rol_id, permiso_id)
 );
+
+
+-- Actualizacion 15/10/2025
+ALTER TABLE usuarios ADD COLUMN apellido TEXT NOT NULL DEFAULT '';
+
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
