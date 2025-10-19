@@ -56,6 +56,6 @@ class Usuario extends Authenticatable implements JWTSubject
 
     public function permisos()
     {
-        return $this->belongsToMany(Rol::class, 'usuarios_permisos', 'usuario_id', 'permiso_id')->withTimestamps();
+        return $this->belongsToMany(Permiso::class, 'usuarios_permisos', 'usuario_id', 'permiso_id')->withTimestamps();
     }
 }

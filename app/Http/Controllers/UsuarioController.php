@@ -180,4 +180,31 @@ class UsuarioController extends Controller
 
         return response()->json(['message' => 'Usuario eliminado correctamente'], 200);
     }
+
+    public function permisosUsuario($id)
+    {
+        $usuario = Usuario::findOrFail($id);
+
+        $permisosRol = $usuario->rol->permisos->map(function ($permiso) {
+            return [
+                'id' => $permiso->id,
+                'nombre' => $permiso->nombre,
+                'descripcion' => $permiso->descripcion
+            ];
+        });
+
+        $permisosUsuario = $usuario->permisos->map(function ($permiso) {
+            return [
+                'id' => $permiso->id,
+                'nombre' => $permiso->nombre,
+                'descripcion' => $permiso->descripcion
+            ];
+        });
+
+        return response()->json([
+            'nombre_rol' => $usuario->rol->nombre,
+            'permisos_rol' => $permisosRol,
+            'permisos_usuario' => $permisosUsuario,
+        ]);
+    }
 }

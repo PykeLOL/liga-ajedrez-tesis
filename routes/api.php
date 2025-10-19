@@ -32,6 +32,8 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::post('/admin', [UsuarioController::class, 'storeAdmin']);
         Route::put('/{id}', [UsuarioController::class, 'update']);
         Route::delete('/{id}', [UsuarioController::class, 'destroy']);
+
+        Route::get('/{id}/permisos', [UsuarioController::class, 'permisosUsuario']);
     });
 
     Route::prefix('roles')->group(function () {
