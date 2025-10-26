@@ -43,7 +43,8 @@ class AuthController extends Controller
                 'id'     => $user->id,
                 'nombre' => $user->nombre ?? $user->name, // depende de tu columna
                 'email'  => $user->email
-            ]
+            ],
+            'permisos' => $user->getAllPermisos()->pluck('nombre'),
         ]);
     }
 

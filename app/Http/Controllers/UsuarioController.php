@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Usuario;
+use App\Models\Permiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -40,7 +41,7 @@ class UsuarioController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
             'documento' => 'nullable|string|max:50',
@@ -50,7 +51,20 @@ class UsuarioController extends Controller
             'contraseña' => 'sometimes|string|min:6',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
+        ], [
+            'email.unique' => 'El correo electrónico ya está registrado.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico no tiene un formato válido.',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error de validación.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
 
         $path = null;
         if ($request->hasFile('imagen')) {
@@ -79,7 +93,7 @@ class UsuarioController extends Controller
 
     public function storeAdmin(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
             'documento' => 'nullable|string|max:50',
@@ -87,7 +101,20 @@ class UsuarioController extends Controller
             'telefono' => 'nullable|string|max:50',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
+        ], [
+            'email.unique' => 'El correo electrónico ya está registrado.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico no tiene un formato válido.',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error de validación.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
 
         $imageName = null;
         if ($request->imagen_base64) {
@@ -125,7 +152,7 @@ class UsuarioController extends Controller
             return response()->json(['message' => 'Usuario no encontrado'], 404);
         }
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
             'documento' => 'nullable|string|max:50',
@@ -135,7 +162,20 @@ class UsuarioController extends Controller
             'contraseña' => 'sometimes|string|min:6',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
+        ], [
+            'email.unique' => 'El correo electrónico ya está registrado.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico no tiene un formato válido.',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error de validación.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
 
         if ($request->imagen_base64) {
             $imageData = $request->imagen_base64;
@@ -202,9 +242,41 @@ class UsuarioController extends Controller
         });
 
         return response()->json([
+            'usuario_id' => $usuario->id,
             'nombre_rol' => $usuario->rol->nombre,
             'permisos_rol' => $permisosRol,
             'permisos_usuario' => $permisosUsuario,
+        ]);
+    }
+
+    public function permisosDisponibles($id)
+    {
+        $usuario = Usuario::findOrFail($id);
+        $permisosAsignados = $usuario->permisos->pluck('id')->toArray();
+
+        $permisos = Permiso::whereNotIn('id', $permisosAsignados)->get(['id', 'nombre', 'descripcion']);
+
+        return response()->json($permisos);
+    }
+
+    public function misPermisos()
+    {
+        $usuario = auth()->user();
+
+        if (!$usuario) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
+
+        // Obtenemos permisos por rol y directos
+        $rolePermisos = $usuario->rol->permisos ?? collect();
+        $userPermisos = $usuario->permisos ?? collect();
+
+        // Unimos y filtramos duplicados
+        $permisos = $rolePermisos->merge($userPermisos)->unique('id')->pluck('nombre');
+
+        return response()->json([
+            'usuario_id' => $usuario->id,
+            'permisos' => $permisos,
         ]);
     }
 }

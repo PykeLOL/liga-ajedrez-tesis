@@ -26,14 +26,15 @@ Route::post('/refresh', [AuthController::class, 'refresh']);
 Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::prefix('usuarios')->group(function () {
-        Route::get('/', [UsuarioController::class, 'index']);
+        Route::get('/', [UsuarioController::class, 'index'])->middleware('permiso:ver-usuarios');
         Route::get('/{id}', [UsuarioController::class, 'show']);
-        Route::post('/', [UsuarioController::class, 'store']);
-        Route::post('/admin', [UsuarioController::class, 'storeAdmin']);
-        Route::put('/{id}', [UsuarioController::class, 'update']);
-        Route::delete('/{id}', [UsuarioController::class, 'destroy']);
-
+        Route::post('/', [UsuarioController::class, 'store'])->middleware('permiso:crear-usuarios');
+        Route::post('/admin', [UsuarioController::class, 'storeAdmin'])->middleware('permiso:crear-usuarios');
+        Route::put('/{id}', [UsuarioController::class, 'update'])->middleware('permiso:editar-usuarios');
+        Route::delete('/{id}', [UsuarioController::class, 'destroy'])->middleware('permiso:eliminar-usuarios');
         Route::get('/{id}/permisos', [UsuarioController::class, 'permisosUsuario']);
+        Route::get('/{id}/permisos-disponibles', [UsuarioController::class, 'permisosDisponibles']);
+        Route::get('/permisos/mi-usuario', [UsuarioController::class, 'misPermisos']);
     });
 
     Route::prefix('roles')->group(function () {
@@ -51,8 +52,8 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::put('/{id}', [PermisoController::class, 'update']);
         Route::delete('/{id}', [PermisoController::class, 'destroy']);
 
-        Route::post('/usuario', [PermisoController::class, 'asignarPermisoUsuario']);
-        Route::post('/rol', [PermisoController::class, 'asignarPermisoRol']);
+        Route::post('/asignar', [PermisoController::class, 'asignarPermiso']);
+        Route::delete('/quitar/permiso', [PermisoController::class, 'quitarPermiso']);
     });
 });
 

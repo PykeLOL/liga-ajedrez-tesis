@@ -90,31 +90,85 @@ class PermisoController extends Controller
         return response()->json(['message' => 'Permiso eliminado correctamente'], 200);
     }
 
-    public function asignarPermisoUsuario(Request $request)
+    public function quitarPermiso(Request $request)
     {
         try {
-            $request->validate([
-                'usuario_id' => 'required|numeric|exists:usuarios,id',
-                'permiso_id' => 'required|numeric|exists:permisos,id',
-            ]);
+            if($request->tipo == 'usuario') {
+                $request->validate([
+                    'id' => 'required|numeric|exists:usuarios,id',
+                    'permiso' => 'required|numeric|exists:permisos,id',
+                ]);
 
-            $usuario = Usuario::findOrFail($request->usuario_id);
-            $permiso = Permiso::findOrFail($request->permiso_id);
+                $usuario = Usuario::findOrFail($request->id);
+                $usuario->permisos()->detach($request->permiso);
+            } else {
+                $request->validate([
+                    'id' => 'required|numeric|exists:roles,id',
+                    'permiso' => 'required|numeric|exists:permisos,id',
+                ]);
 
-            if ($usuario->permisos()->where('permiso_id', $permiso->id)->exists()) {
-                return response()->json([
-                    'message' => 'El permiso ya está asignado a este usuario.'
-                ], 409);
+                $rol = Rol::findOrFail($request->id);
+                $rol->permisos()->detach($request->permiso);
             }
 
-            $usuario->permisos()->attach($permiso->id);
-
+            return response()->json(['message' => 'Permiso eliminado correctamente.']);
+        } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Permiso asignado exitosamente al usuario.',
-                'usuario' => $usuario->nombre . " " . $usuario->apellido,
-                'permiso' => $permiso->nombre
-            ], 201);
+                'message' => 'Ocurrió un error inesperado al procesar la solicitud.',
+            ], 500);
+        }
+    }
 
+    public function asignarPermiso(Request $request)
+    {
+        try {
+            if($request->tipo == 'usuario') {
+                $request->validate([
+                    'id' => 'required|numeric|exists:usuarios,id',
+                    'permiso' => 'required|numeric|exists:permisos,id',
+                ]);
+
+                $usuario = Usuario::findOrFail($request->id);
+                $usuario->permisos()->detach($request->permiso);
+                $permiso = Permiso::findOrFail($request->permiso);
+
+                if ($usuario->permisos()->where('permiso_id', $permiso->id)->exists()) {
+                    return response()->json([
+                        'message' => 'El permiso ya está asignado a este usuario.'
+                    ], 409);
+                }
+
+                $usuario->permisos()->attach($permiso->id);
+
+                return response()->json([
+                    'message' => 'Permiso asignado exitosamente al usuario.',
+                    'usuario' => $usuario->nombre . " " . $usuario->apellido,
+                    'permiso' => $permiso->nombre
+                ], 201);
+            } else {
+                $request->validate([
+                    'id' => 'required|numeric|exists:roles,id',
+                    'permiso' => 'required|numeric|exists:permisos,id',
+                ]);
+
+                $rol = Rol::findOrFail($request->id);
+                $rol->permisos()->detach($request->permiso);
+                $permiso = Permiso::findOrFail($request->permiso);
+
+                if ($rol->permisos()->where('permiso_id', $permiso->id)->exists()) {
+                    return response()->json([
+                        'message' => 'El permiso ya está asignado a este rol.'
+                    ], 409);
+                }
+
+                $rol->permisos()->attach($permiso->id);
+
+                return response()->json([
+                    'message' => 'Permiso asignado exitosamente al rol.',
+                    'rol' => $rol->nombre . " | " . $rol->descripcion,
+                    'permiso' => $permiso->nombre
+                ], 201);
+            }
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Credenciales de validación inválidas.',
