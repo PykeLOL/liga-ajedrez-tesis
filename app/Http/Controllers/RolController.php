@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rol;
+use App\Models\Permiso;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RolController extends Controller
 {
@@ -39,6 +41,7 @@ class RolController extends Controller
 
     public function update(Request $request, $id)
     {
+        log::info("Request: " . json_encode($request->all()));
         $rol = Rol::find($id);
         if (!$rol) {
             return response()->json(['message' => 'Rol no encontrado'], 404);
@@ -68,5 +71,34 @@ class RolController extends Controller
         }
         $rol->delete();
         return response()->json(['message' => 'Rol eliminado'], 200);
+    }
+
+    public function permisosRol($id)
+    {
+        $rol = Rol::findOrFail($id);
+
+        $permisosRol = $rol->permisos->map(function ($permiso) {
+            return [
+                'id' => $permiso->id,
+                'nombre' => $permiso->nombre,
+                'descripcion' => $permiso->descripcion
+            ];
+        });
+
+        return response()->json([
+            'rol_id' => $rol->id,
+            'nombre_rol' => $rol->nombre,
+            'permisos_rol' => $permisosRol,
+        ]);
+    }
+
+    public function permisosDisponibles($id)
+    {
+        $rol = Rol::findOrFail($id);
+        $permisosAsignados = $rol->permisos->pluck('id')->toArray();
+
+        $permisos = Permiso::whereNotIn('id', $permisosAsignados)->get(['id', 'nombre', 'descripcion']);
+
+        return response()->json($permisos);
     }
 }

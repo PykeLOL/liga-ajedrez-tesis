@@ -44,11 +44,11 @@ class UsuarioController extends Controller
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
-            'documento' => 'nullable|string|max:50',
+            'documento' => 'required|string|max:50',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:50',
-            'password' => 'sometimes|string|min:6',
-            'contraseña' => 'sometimes|string|min:6',
+            'password' => 'sometimes|string|min:5',
+            'contraseña' => 'sometimes|string|min:5',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
         ], [
