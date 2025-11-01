@@ -4,9 +4,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LigaController;
+use App\Http\Controllers\ClubController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\PermisoController;
-
 
 /*
 |--------------------------------------------------------------------------
@@ -56,6 +57,20 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
 
         Route::post('/asignar', [PermisoController::class, 'asignarPermiso']);
         Route::delete('/quitar/permiso', [PermisoController::class, 'quitarPermiso']);
+    });
+
+    Route::prefix('ligas')->group(function () {
+        Route::get('/', [LigaController::class, 'index'])->middleware('permiso:ver-ligas');
+        Route::get('/{id}', [LigaController::class, 'show'])->middleware('permiso:editar-ligas');
+        Route::put('/{id}', [LigaController::class, 'update'])->middleware('permiso:editar-ligas');
+        Route::delete('/{id}', [LigaController::class, 'destroy'])->middleware('permiso:eliminar-ligas');
+    });
+
+    Route::prefix('clubes')->group(function () {
+        Route::get('/', [ClubController::class, 'index'])->middleware('permiso:ver-clubes');
+        Route::get('/{id}', [ClubController::class, 'show'])->middleware('permiso:editar-clubes');
+        Route::put('/{id}', [ClubController::class, 'update'])->middleware('permiso:editar-clubes');
+        Route::delete('/{id}', [ClubController::class, 'destroy'])->middleware('permiso:eliminar-clubes');
     });
 });
 

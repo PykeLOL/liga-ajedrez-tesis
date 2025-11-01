@@ -7,7 +7,6 @@ use App\Models\Permiso;
 use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -16,11 +15,11 @@ class PermisoController extends Controller
     public function index()
     {
         $permisos = Permiso::with('roles')->get();
-        $permisos = $permisos->map(function ($usuario) {
+        $permisos = $permisos->map(function ($permiso) {
             return [
-                'id' => $usuario->id,
-                'nombre' => $usuario->nombre,
-                'descripcion' => $usuario->descripcion,
+                'id' => $permiso->id,
+                'nombre' => $permiso->nombre,
+                'descripcion' => $permiso->descripcion,
             ];
         });
 
@@ -31,7 +30,7 @@ class PermisoController extends Controller
     {
         $permiso = Permiso::find($id);
         if (!$permiso) {
-            return response()->json(['message' => 'Usuario no encontrado'], 404);
+            return response()->json(['message' => 'Permiso no encontrado'], 404);
         }
         return response()->json($permiso, 200);
     }
@@ -66,7 +65,7 @@ class PermisoController extends Controller
             'descripcion' => 'required|string|max:255',
         ]);
 
-        $usuario->update([
+        $permiso->update([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
         ]);

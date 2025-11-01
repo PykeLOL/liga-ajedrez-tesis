@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             UserSeeder::class,
             RolePermissionSeeder::class,
+            LigasSeeder::class,
+            ClubesSeeder::class,
         ]);
     }
 }

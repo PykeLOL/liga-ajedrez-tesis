@@ -31,7 +31,7 @@ class RolePermissionSeeder extends Seeder
                             ->pluck('id');
 
         $permisosParaAdmin = $verPermisosIds->merge($permisosUsuariosId)->unique();
-        $permisosParaAdmin = $verPermisosIds->merge($permisosRolesId)->unique();
+        $permisosParaAdmin = $permisosParaAdmin->merge($permisosRolesId)->unique();
         $rolePermissions = [];
         
         foreach ($permisosParaAdmin as $permisoId) {
