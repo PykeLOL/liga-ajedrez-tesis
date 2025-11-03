@@ -47,13 +47,16 @@ class UsuarioController extends Controller
             'documento' => 'required|string|max:50',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:50',
-            'contraseña' => 'required|string|min:5',
+            'contraseña' => 'required|string|min:5|same:confirmar_contraseña',
+            'confirmar_contraseña' => 'required|string|min:5',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
         ], [
             'email.unique' => 'El correo electrónico ya está registrado.',
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico no tiene un formato válido.',
+            'contraseña.same' => 'Las contraseñas no coinciden.',
+            'confirmar_contraseña.required' => 'Debes confirmar tu contraseña.',
         ]);
 
         if ($validator->fails()) {
@@ -70,15 +73,13 @@ class UsuarioController extends Controller
             $path = $request->file('imagen')->store('usuarios', 'public');
         }
 
-        $plainPassword = $request->input('contraseña');
-
         $usuario = Usuario::create([
             'nombre' => $validated['nombre'],
             'apellido' => $validated['apellido'],
             'documento' => $validated['documento'] ?? null,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? null,
-            'contraseña' => Hash::make($plainPassword),
+            'contraseña' => Hash::make($validated['contraseña']),
             'rol_id' => $validated['rol_id'] ?? null,
             'estado' => true,
             'imagen_path' => $path,
