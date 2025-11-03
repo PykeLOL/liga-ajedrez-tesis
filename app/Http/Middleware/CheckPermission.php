@@ -16,14 +16,22 @@ class CheckPermission
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function handle($request, Closure $next, $permiso)
+    public function handle(Request $request, Closure $next, $permisos)
     {
         $user = Auth::user();
 
-        if (!$user || !$user->tienePermiso($permiso)) {
-            return response()->json(['message' => 'Acceso no autorizado'], 403);
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no autenticado'], 401);
         }
 
-        return $next($request);
+        $permisosArray = explode('|', $permisos);
+
+        foreach ($permisosArray as $permiso) {
+            if ($user->tienePermiso(trim($permiso))) {
+                return $next($request);
+            }
+        }
+
+        return response()->json(['message' => 'Acceso no autorizado'], 403);
     }
 }

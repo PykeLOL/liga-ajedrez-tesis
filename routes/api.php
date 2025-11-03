@@ -39,24 +39,24 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('roles')->group(function () {
-        Route::get('/', [RolController::class, 'index']);
-        Route::get('/{id}', [RolController::class, 'show']);
-        Route::post('/', [RolController::class, 'store']);
-        Route::put('/{id}', [RolController::class, 'update']);
-        Route::delete('/{id}', [RolController::class, 'destroy']);
+        Route::get('/', [RolController::class, 'index'])->middleware('permiso:ver-roles');
+        Route::get('/{id}', [RolController::class, 'show'])->middleware('permiso:editar-roles');
+        Route::post('/', [RolController::class, 'store'])->middleware('permiso:crear-roles');
+        Route::put('/{id}', [RolController::class, 'update'])->middleware('permiso:editar-roles');
+        Route::delete('/{id}', [RolController::class, 'destroy'])->middleware('permiso:eliminar-roles');
         Route::get('/{id}/permisos', [RolController::class, 'permisosRol'])->middleware('permiso:permisos-roles');
-        Route::get('/{id}/permisos-disponibles', [RolController::class, 'permisosDisponibles']);
+        Route::get('/{id}/permisos-disponibles', [RolController::class, 'permisosDisponibles'])->middleware('permiso:permisos-roles');
     });
 
     Route::prefix('permisos')->group(function () {
-        Route::get('/', [PermisoController::class, 'index']);
-        Route::get('/{id}', [PermisoController::class, 'show']);
-        Route::post('/', [PermisoController::class, 'store']);
-        Route::put('/{id}', [PermisoController::class, 'update']);
-        Route::delete('/{id}', [PermisoController::class, 'destroy']);
+        Route::get('/', [PermisoController::class, 'index'])->middleware('permiso:ver-permisos');
+        Route::get('/{id}', [PermisoController::class, 'show'])->middleware('permiso:editar-permisos');
+        Route::post('/', [PermisoController::class, 'store'])->middleware('permiso:crear-permisos');
+        Route::put('/{id}', [PermisoController::class, 'update'])->middleware('permiso:editar-permisos');
+        Route::delete('/{id}', [PermisoController::class, 'destroy'])->middleware('permiso:eliminar-permisos');
 
-        Route::post('/asignar', [PermisoController::class, 'asignarPermiso']);
-        Route::delete('/quitar/permiso', [PermisoController::class, 'quitarPermiso']);
+        Route::post('/asignar', [PermisoController::class, 'asignarPermiso'])->middleware('permiso:permisos-usuarios|permisos-roles');
+        Route::delete('/quitar/permiso', [PermisoController::class, 'quitarPermiso'])->middleware('permiso:permisos-usuarios|permisos-roles');
     });
 
     Route::prefix('ligas')->group(function () {
