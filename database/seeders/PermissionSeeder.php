@@ -33,10 +33,17 @@ class PermissionSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
-        
+
         $permissions[] = [
                     'nombre' => "permisos-roles",
                     'descripcion' => "Permite la acción de Editar los permisos del rol en el módulo de roles.",
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+        $permissions[] = [
+                    'nombre' => "editar-perfil",
+                    'descripcion' => "Permite la acción de Editar el perfil del usuario.",
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

@@ -6,6 +6,7 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LigaController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\PermisoController;
 
@@ -27,6 +28,15 @@ Route::post('/usuarios', [UsuarioController::class, 'store']);
 
 Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::prefix('perfil')->group(function () {
+        Route::get('/', [PerfilController::class, 'index']);
+        Route::get('/permisos', [PerfilController::class, 'misPermisos']);
+        Route::put('/cambiar-contrasena', [PerfilController::class, 'cambiarContrasena']);
+        Route::put('/', [PerfilController::class, 'update'])->middleware('permiso:editar-perfil');
+        Route::delete('/eliminar-foto', [PerfilController::class, 'eliminarFoto'])->middleware('permiso:editar-perfil');
+    });
+
     Route::prefix('usuarios')->group(function () {
         Route::get('/', [UsuarioController::class, 'index'])->middleware('permiso:ver-usuarios');
         Route::get('/{id}', [UsuarioController::class, 'show'])->middleware('permiso:editar-usuarios');

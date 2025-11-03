@@ -7,6 +7,7 @@ use App\Models\Permiso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class UsuarioController extends Controller
@@ -158,7 +159,6 @@ class UsuarioController extends Controller
             'documento' => 'nullable|string|max:50',
             'email' => 'required|email|unique:usuarios,email,' . $id,
             'telefono' => 'nullable|string|max:50',
-            'contraseña' => 'required|string|min:6',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
         ], [
@@ -176,19 +176,24 @@ class UsuarioController extends Controller
 
         $validated = $validator->validated();
 
-        if ($request->imagen_base64) {
-            $imageData = $request->imagen_base64;
-            $image = str_replace('data:image/png;base64,', '', $imageData);
-            $image = str_replace('data:image/jpeg;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
+        if ($request->boolean('eliminar_imagen')) {
+            if ($usuario->imagen_path && Storage::exists($usuario->imagen_path)) {
+                Storage::delete($usuario->imagen_path);
+            }
+            $usuario->imagen_path = null;
+        } else {
+            if ($request->imagen_base64) {
+                $imageData = $request->imagen_base64;
+                $image = str_replace('data:image/png;base64,', '', $imageData);
+                $image = str_replace('data:image/jpeg;base64,', '', $image);
+                $image = str_replace(' ', '+', $image);
 
-            $imageName = 'usuarios/' . uniqid() . '.png';
-            \Storage::disk('public')->put($imageName, base64_decode($image));
+                $imageName = 'usuarios/' . uniqid() . '.png';
+                \Storage::disk('public')->put($imageName, base64_decode($image));
 
-            $usuario->imagen_path = $imageName;
+                $usuario->imagen_path = $imageName;
+            }
         }
-
-        $plainPassword = $request->input('contraseña');
 
         $usuario->update([
             'nombre' => $validated['nombre'],
@@ -196,7 +201,6 @@ class UsuarioController extends Controller
             'documento' => $validated['documento'] ?? $usuario->documento,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? $usuario->telefono,
-            'contraseña' => isset($plainPassword) ? Hash::make($plainPassword) : $usuario->contraseña,
             'rol_id' => $validated['rol_id'] ?? $usuario->rol_id,
             'imagen_path' => $usuario->imagen_path,
         ]);

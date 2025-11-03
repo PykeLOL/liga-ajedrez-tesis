@@ -25,15 +25,20 @@ class RolePermissionSeeder extends Seeder
         $permisosUsuariosId = DB::table('permisos')
                             ->where('nombre', 'permisos-usuarios')
                             ->pluck('id');
-        
+
         $permisosRolesId = DB::table('permisos')
                             ->where('nombre', 'permisos-roles')
                             ->pluck('id');
 
+        $permisosPerfilId = DB::table('permisos')
+                            ->where('nombre', 'editar-perfil')
+                            ->pluck('id');
+
         $permisosParaAdmin = $verPermisosIds->merge($permisosUsuariosId)->unique();
         $permisosParaAdmin = $permisosParaAdmin->merge($permisosRolesId)->unique();
+        $permisosParaAdmin = $permisosParaAdmin->merge($permisosPerfilId)->unique();
         $rolePermissions = [];
-        
+
         foreach ($permisosParaAdmin as $permisoId) {
             $rolePermissions[] = [
                 'rol_id' => $adminRolId,
