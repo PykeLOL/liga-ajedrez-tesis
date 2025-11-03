@@ -24,7 +24,9 @@ class ClubController extends Controller
 
     public function show($id)
     {
-        $club = Club::find($id);
+        $club = Club::find($id)
+            ->with('liga', 'presidente')
+            ->first();
         if (!$club) {
             return response()->json(['message' => 'Club no encontrado'], 404);
         }
@@ -37,6 +39,7 @@ class ClubController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
             'presidente_id' => 'nullable|numeric|exists:usuarios,id',
+            'liga_id' => 'nullable|numeric|exists:ligas,id',
             'imagen' => 'nullable|image|max:2048',
         ]);
 
@@ -51,33 +54,35 @@ class ClubController extends Controller
 
         $path = null;
         if ($request->hasFile('imagen')) {
-            $path = $request->file('imagen')->store('ligas', 'public');
+            $path = $request->file('imagen')->store('clubes', 'public');
         }
 
-        $liga = Liga::create([
+        $club = Club::create([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
             'presidente_id' => $validated['presidente_id'],
+            'liga_id' => $validated['liga_id'],
             'logo' => $path,
         ]);
 
         return response()->json([
-            'message' => 'Liga creada exitosamente',
+            'message' => 'Club creada exitosamente',
             'permiso' => $permiso
         ], 201);
     }
 
     public function update(Request $request, $id)
     {
-        $liga = Liga::find($id);
-        if (!$liga) {
-            return response()->json(['message' => 'Liga no encontrado'], 404);
+        $club = Club::find($id);
+        if (!$club) {
+            return response()->json(['message' => 'Club no encontrado'], 404);
         }
 
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
             'presidente_id' => 'nullable|numeric|exists:usuarios,id',
+            'liga_id' => 'nullable|numeric|exists:ligas,id',
             'imagen' => 'nullable|image|max:2048',
         ]);
 
@@ -92,32 +97,33 @@ class ClubController extends Controller
 
         $path = null;
         if ($request->hasFile('imagen')) {
-            $path = $request->file('imagen')->store('ligas', 'public');
+            $path = $request->file('imagen')->store('clubes', 'public');
         }
 
-        $liga->update([
+        $club->update([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
             'presidente_id' => $validated['presidente_id'],
+            'liga_id' => $validated['liga_id'],
             'logo' => $path,
         ]);
 
         return response()->json([
-            'message' => 'Liga actualizado correctamente',
-            'liga' => $liga
+            'message' => 'Club actualizado correctamente',
+            'club' => $club
         ], 200);
     }
 
 
     public function destroy($id)
     {
-        $liga = Liga::find($id);
-        if (!$liga) {
-            return response()->json(['message' => 'Liga no encontrado'], 404);
+        $club = Club::find($id);
+        if (!$club) {
+            return response()->json(['message' => 'Club no encontrado'], 404);
         }
 
-        $liga->delete();
+        $club->delete();
 
-        return response()->json(['message' => 'Liga eliminado correctamente'], 200);
+        return response()->json(['message' => 'Club eliminado correctamente'], 200);
     }
 }
