@@ -34,7 +34,9 @@ class LigaController extends Controller
 
     public function show($id)
     {
-        $liga = Liga::find($id);
+        $liga = Liga::find($id)
+            ->with('clubes', 'presidente')
+            ->first();
         if (!$liga) {
             return response()->json(['message' => 'Liga no encontrado'], 404);
         }
@@ -73,7 +75,7 @@ class LigaController extends Controller
 
         return response()->json([
             'message' => 'Liga creada exitosamente',
-            'permiso' => $permiso
+            'liga' => $liga
         ], 201);
     }
 

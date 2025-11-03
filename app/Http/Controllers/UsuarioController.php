@@ -47,8 +47,7 @@ class UsuarioController extends Controller
             'documento' => 'required|string|max:50',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:50',
-            'password' => 'sometimes|string|min:5',
-            'contraseña' => 'sometimes|string|min:5',
+            'contraseña' => 'required|string|min:5',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
         ], [
@@ -71,7 +70,7 @@ class UsuarioController extends Controller
             $path = $request->file('imagen')->store('usuarios', 'public');
         }
 
-        $plainPassword = $request->input('password', $request->input('contraseña'));
+        $plainPassword = $request->input('contraseña');
 
         $usuario = Usuario::create([
             'nombre' => $validated['nombre'],
@@ -158,8 +157,7 @@ class UsuarioController extends Controller
             'documento' => 'nullable|string|max:50',
             'email' => 'required|email|unique:usuarios,email,' . $id,
             'telefono' => 'nullable|string|max:50',
-            'password' => 'sometimes|string|min:6',
-            'contraseña' => 'sometimes|string|min:6',
+            'contraseña' => 'required|string|min:6',
             'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
         ], [
@@ -189,7 +187,7 @@ class UsuarioController extends Controller
             $usuario->imagen_path = $imageName;
         }
 
-        $plainPassword = $request->input('password', $request->input('contraseña'));
+        $plainPassword = $request->input('contraseña');
 
         $usuario->update([
             'nombre' => $validated['nombre'],
