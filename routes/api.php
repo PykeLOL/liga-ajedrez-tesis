@@ -9,6 +9,8 @@ use App\Http\Controllers\ClubController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\PermisoController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\DeportistaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +23,6 @@ use App\Http\Controllers\PermisoController;
 |
 */
 
-// Route::post('/usuarios', [UsuarioController::class, 'store']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
 Route::post('/usuarios', [UsuarioController::class, 'store']);
@@ -83,6 +84,22 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/{id}', [ClubController::class, 'show'])->middleware('permiso:editar-clubes');
         Route::put('/{id}', [ClubController::class, 'update'])->middleware('permiso:editar-clubes');
         Route::delete('/{id}', [ClubController::class, 'destroy'])->middleware('permiso:eliminar-clubes');
+    });
+
+    Route::prefix('categorias')->group(function () {
+        Route::get('/', [CategoriaController::class, 'index'])->middleware('permiso:ver-categorias');
+        Route::post('/', [CategoriaController::class, 'store'])->middleware('permiso:crear-categorias');
+        Route::get('/{id}', [CategoriaController::class, 'show'])->middleware('permiso:editar-categorias');
+        Route::put('/{id}', [CategoriaController::class, 'update'])->middleware('permiso:editar-categorias');
+        Route::delete('/{id}', [CategoriaController::class, 'destroy'])->middleware('permiso:eliminar-categorias');
+    });
+
+    Route::prefix('deportistas')->group(function () {
+        Route::get('/', [DeportistaController::class, 'index'])->middleware('permiso:ver-deportistas');
+        Route::post('/', [DeportistaController::class, 'store'])->middleware('permiso:crear-deportistas');
+        Route::get('/{id}', [DeportistaController::class, 'show'])->middleware('permiso:editar-deportistas');
+        Route::put('/{id}', [DeportistaController::class, 'update'])->middleware('permiso:editar-deportistas');
+        Route::delete('/{id}', [DeportistaController::class, 'destroy'])->middleware('permiso:eliminar-deportistas');
     });
 });
 

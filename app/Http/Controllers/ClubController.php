@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Club;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ClubController extends Controller
 {
@@ -67,7 +70,7 @@ class ClubController extends Controller
 
         return response()->json([
             'message' => 'Club creada exitosamente',
-            'permiso' => $permiso
+            'club' => $club
         ], 201);
     }
 
