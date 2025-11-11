@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 use Illuminate\Database\Seeder;
 
-class LigasSeeder extends Seeder
+class LigaSeeder extends Seeder
 {
     /**
      * Run the database seeds.

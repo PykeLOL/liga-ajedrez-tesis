@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePermisosTable extends Migration
+class CreateTipoAccionTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,17 +13,11 @@ class CreatePermisosTable extends Migration
      */
     public function up()
     {
-        Schema::create('permisos', function (Blueprint $table) {
+        Schema::create('tipo_accion', function (Blueprint $table) {
             $table->id();
             $table->text('nombre');
             $table->text('descripcion')->nullable();
-
-            $table->unsignedBigInteger('tipo_accion_id')->nullable();
-            $table->unsignedBigInteger('modulo_id')->nullable();
             $table->timestamps();
-
-            $table->foreign('tipo_accion_id')->references('id')->on('tipo_accion')->onDelete('set null');
-            $table->foreign('modulo_id')->references('id')->on('modulos')->onDelete('set null');
         });
     }
 
@@ -34,6 +28,6 @@ class CreatePermisosTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('permisos');
+        Schema::dropIfExists('tipo_accion');
     }
 }
