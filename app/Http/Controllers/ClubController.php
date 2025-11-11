@@ -69,7 +69,7 @@ class ClubController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Club creada exitosamente',
+            'message' => 'Club creado exitosamente',
             'club' => $club
         ], 201);
     }

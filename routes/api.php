@@ -6,11 +6,13 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LigaController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ModuloController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\DeportistaController;
+use App\Http\Controllers\TipoAccionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +52,7 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('roles')->group(function () {
+        Route::get('/select', [RolController::class, 'index']);
         Route::get('/', [RolController::class, 'index'])->middleware('permiso:ver-roles');
         Route::get('/{id}', [RolController::class, 'show'])->middleware('permiso:editar-roles');
         Route::post('/', [RolController::class, 'store'])->middleware('permiso:crear-roles');
@@ -71,6 +74,7 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('ligas')->group(function () {
+        Route::get('/select', [LigaController::class, 'index']);
         Route::get('/', [LigaController::class, 'index'])->middleware('permiso:ver-ligas');
         Route::post('/', [LigaController::class, 'store'])->middleware('permiso:crear-ligas');
         Route::get('/{id}', [LigaController::class, 'show'])->middleware('permiso:editar-ligas');
@@ -79,6 +83,7 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('clubes')->group(function () {
+        Route::get('/select', [ClubController::class, 'index']);
         Route::get('/', [ClubController::class, 'index'])->middleware('permiso:ver-clubes');
         Route::post('/', [ClubController::class, 'store'])->middleware('permiso:crear-clubes');
         Route::get('/{id}', [ClubController::class, 'show'])->middleware('permiso:editar-clubes');
@@ -87,6 +92,7 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('categorias')->group(function () {
+        Route::get('/select', [CategoriaController::class, 'index']);
         Route::get('/', [CategoriaController::class, 'index'])->middleware('permiso:ver-categorias');
         Route::post('/', [CategoriaController::class, 'store'])->middleware('permiso:crear-categorias');
         Route::get('/{id}', [CategoriaController::class, 'show'])->middleware('permiso:editar-categorias');
@@ -100,6 +106,24 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/{id}', [DeportistaController::class, 'show'])->middleware('permiso:editar-deportistas');
         Route::put('/{id}', [DeportistaController::class, 'update'])->middleware('permiso:editar-deportistas');
         Route::delete('/{id}', [DeportistaController::class, 'destroy'])->middleware('permiso:eliminar-deportistas');
+    });
+
+    Route::prefix('tipo-accion')->group(function () {
+        Route::get('/select', [TipoAccionController::class, 'index']);
+        Route::get('/', [TipoAccionController::class, 'index'])->middleware('permiso:ver-tipo-accion');
+        Route::post('/', [TipoAccionController::class, 'store'])->middleware('permiso:crear-tipo-accion');
+        Route::get('/{id}', [TipoAccionController::class, 'show'])->middleware('permiso:editar-tipo-accion');
+        Route::put('/{id}', [TipoAccionController::class, 'update'])->middleware('permiso:editar-tipo-accion');
+        Route::delete('/{id}', [TipoAccionController::class, 'destroy'])->middleware('permiso:eliminar-tipo-accion');
+    });
+
+    Route::prefix('modulos')->group(function () {
+        Route::get('/select', [ModuloController::class, 'index']);
+        Route::get('/', [ModuloController::class, 'index'])->middleware('permiso:ver-modulos');
+        Route::post('/', [ModuloController::class, 'store'])->middleware('permiso:crear-modulos');
+        Route::get('/{id}', [ModuloController::class, 'show'])->middleware('permiso:editar-modulos');
+        Route::put('/{id}', [ModuloController::class, 'update'])->middleware('permiso:editar-modulos');
+        Route::delete('/{id}', [ModuloController::class, 'destroy'])->middleware('permiso:eliminar-modulos');
     });
 });
 
