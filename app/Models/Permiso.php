@@ -13,7 +13,9 @@ class Permiso extends Model
 
     protected $fillable = [
         'nombre',
-        'descripcion'
+        'descripcion',
+        'tipo_accion_id',
+        'modulo_id'
     ];
 
     public $timestamps = true;
