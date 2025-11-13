@@ -67,11 +67,15 @@ class PermisoController extends Controller
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
+            'tipo_accion_id'  => 'required|integer|exists:tipo_accion,id',
+            'modulo_id'  => 'required|integer|exists:modulos,id',
         ]);
 
         $permiso->update([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
+            'tipo_accion_id' => $validated['tipo_accion_id'],
+            'modulo_id' => $validated['modulo_id'],
         ]);
 
         return response()->json([
