@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\TipoAccion;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class TipoAccionController extends Controller
 {
@@ -23,7 +24,7 @@ class TipoAccionController extends Controller
 
     public function show($id)
     {
-        $tipoAccion = TipoAccion::find($id)->first();
+        $tipoAccion = TipoAccion::find($id);
         if (!$tipoAccion) {
             return response()->json(['message' => 'Tipo Accion no encontrado'], 404);
         }

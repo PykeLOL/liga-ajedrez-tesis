@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Modulo;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ModuloController extends Controller
 {
@@ -23,7 +24,7 @@ class ModuloController extends Controller
 
     public function show($id)
     {
-        $modulo = Modulo::find($id)->first();
+        $modulo = Modulo::find($id);
         if (!$modulo) {
             return response()->json(['message' => 'Modulo no encontrado'], 404);
         }
