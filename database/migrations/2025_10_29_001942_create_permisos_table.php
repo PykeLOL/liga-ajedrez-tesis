@@ -15,7 +15,7 @@ class CreatePermisosTable extends Migration
     {
         Schema::create('permisos', function (Blueprint $table) {
             $table->id();
-            $table->text('nombre');
+            $table->text('nombre')->unique();
             $table->text('descripcion')->nullable();
 
             $table->unsignedBigInteger('tipo_accion_id')->nullable();

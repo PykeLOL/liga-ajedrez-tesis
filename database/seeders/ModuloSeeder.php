@@ -97,12 +97,12 @@ class ModuloSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'nombre' => 'perfil',
-                'descripcion' => 'Administración la informacion de mi Perfil.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            // [
+            //     'nombre' => 'perfil',
+            //     'descripcion' => 'Administración la informacion de mi Perfil.',
+            //     'created_at' => now(),
+            //     'updated_at' => now(),
+            // ],
         ];
 
         DB::table('modulos')->insert($modulos);

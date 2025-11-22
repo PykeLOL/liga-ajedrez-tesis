@@ -36,8 +36,8 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/', [PerfilController::class, 'index']);
         Route::get('/permisos', [PerfilController::class, 'misPermisos']);
         Route::put('/cambiar-contrasena', [PerfilController::class, 'cambiarContrasena']);
-        Route::put('/', [PerfilController::class, 'update'])->middleware('permiso:editar-perfil');
-        Route::delete('/eliminar-foto', [PerfilController::class, 'eliminarFoto'])->middleware('permiso:editar-perfil');
+        Route::put('/', [PerfilController::class, 'update']);
+        Route::delete('/eliminar-foto', [PerfilController::class, 'eliminarFoto']);
     });
 
     Route::prefix('usuarios')->group(function () {
