@@ -27,8 +27,8 @@ class ClubController extends Controller
 
     public function show($id)
     {
-        $club = Club::find($id)
-            ->with('liga', 'presidente')
+        $club = Club::with('liga', 'presidente')
+            ->where('id', $id)
             ->first();
         if (!$club) {
             return response()->json(['message' => 'Club no encontrado'], 404);

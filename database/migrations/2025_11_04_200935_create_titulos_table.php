@@ -16,6 +16,8 @@ class CreateTitulosTable extends Migration
         Schema::create('titulos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
+            $table->string('abreviacion')->nullable(); // Ej: GM, IM, etc.
+            $table->boolean('es_fide')->default(false); // TRUE si es oficial FIDE
             $table->timestamps();
         });
     }

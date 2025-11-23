@@ -5,15 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Nacionalidad extends Model
+class Titulo extends Model
 {
     use HasFactory;
 
-    protected $table = 'nacionalidades';
+    protected $table = 'titulos';
 
     protected $fillable = [
         'nombre',
-        'codigo'
+        'abreviacion',
+        'es_fide'
     ];
 
     public $timestamps = true;

@@ -28,8 +28,8 @@ class CategoriaController extends Controller
 
     public function show($id)
     {
-        $categoria = Categoria::find($id)
-            ->with('deportistas')
+        $categoria = Categoria::with('deportistas')
+            ->where('id', $id)
             ->first();
         if (!$categoria) {
             return response()->json(['message' => 'Categoria no encontrado'], 404);

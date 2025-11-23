@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
             RolPermisoSeeder::class,
             LigaSeeder::class,
             ClubSeeder::class,
+            CategoriaSeeder::class,
+            NacionalidadSeeder::class,
+            TipoIdentificacionSeeder::class,
+            TituloSeeder::class,
+            GeneroSeeder::class,
         ]);
     }
 }

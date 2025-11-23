@@ -16,14 +16,14 @@ class Deportista extends Model
         'club_id',
         'categoria_id',
         'fecha_nacimiento',
-        'genero',
-        'nacionalidad',
-        'tipo_identificacion',
+        'genero_id',
+        'nacionalidad_id',
+        'tipo_identificacion_id',
         'numero_identificacion',
         'elo_nacional',
         'elo_internacional',
         'fide_id',
-        'titulo',
+        'titulo_id',
         'estado',
     ];
 
@@ -42,5 +42,25 @@ class Deportista extends Model
     public function categoria()
     {
         return $this->belongsTo(Categoria::class, 'categoria_id');
+    }
+
+    public function genero()
+    {
+        return $this->belongsTo(Genero::class, 'genero_id');
+    }
+
+    public function nacionalidad()
+    {
+        return $this->belongsTo(Nacionalidad::class, 'nacionalidad_id');
+    }
+
+    public function tipoIdentificacion()
+    {
+        return $this->belongsTo(TipoIdentificacion::class, 'tipo_identificacion_id');
+    }
+
+    public function titulo()
+    {
+        return $this->belongsTo(Titulo::class, 'titulo_id');
     }
 }

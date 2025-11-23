@@ -34,8 +34,8 @@ class LigaController extends Controller
 
     public function show($id)
     {
-        $liga = Liga::find($id)
-            ->with('clubes', 'presidente')
+        $liga = Liga::with('clubes', 'presidente')
+            ->where('id', $id)
             ->first();
         if (!$liga) {
             return response()->json(['message' => 'Liga no encontrado'], 404);
