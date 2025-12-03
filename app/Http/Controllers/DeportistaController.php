@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Titulo;
+use App\Models\Usuario;
 use App\Models\Categoria;
 use App\Models\Deportista;
 use Illuminate\Http\Request;
@@ -14,19 +15,19 @@ class DeportistaController extends Controller
 {
     public function index()
     {
-        $deportistas = Deportista::with(['genero', 'usuario', 'club', 'categoria'])->get();
+        $deportistas = Deportista::with(['genero', 'usuario', 'club', 'categoria', 'nacionalidad', 'usuario.tipoIdentificacion', 'titulo'])->get();
         $deportistas = $deportistas->map(function ($deportista) {
             return [
                 'id' => $deportista->id,
                 'fecha_nacimiento' => $deportista->fecha_nacimiento,
                 'genero' => $deportista->genero->nombre,
                 'nacionalidad' => $deportista->nacionalidad->codigo,
-                'tipo_identificacion' => $deportista->tipoIdentificacion->abreviacion,
-                'numero_identificacion' => $deportista->numero_identificacion,
+                'tipo_identificacion' => $deportista->usuario->tipoIdentificacion->abreviacion,
+                'numero_identificacion' => $deportista->usuario->numero_identificacion,
                 'elo_nacional' => $deportista->elo_nacional,
                 'elo_internacional' => $deportista->elo_internacional,
                 'fide_id' => $deportista->fide_id,
-                'titulo' => $deportista->titulo->abreviacion,
+                'titulo' => $deportista->titulo ? $deportista->titulo->abreviacion : null,
                 'estado' => $deportista->estado,
 
                 'usuario' => [
@@ -56,7 +57,7 @@ class DeportistaController extends Controller
 
     public function show($id)
     {
-        $deportista = Deportista::with(['genero', 'usuario', 'club', 'categoria', 'nacionalidad', 'tipoIdentificacion', 'titulo'])
+        $deportista = Deportista::with(['genero', 'usuario', 'club', 'categoria', 'nacionalidad', 'usuario.tipoIdentificacion', 'titulo'])
             ->where('id', $id)
             ->first();
         if (!$deportista) {
@@ -68,18 +69,19 @@ class DeportistaController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'usuario_id' => 'required|numeric|exists:usuarios,id',
+            'usuario_id' => 'required|numeric|exists:usuarios,id|unique:deportistas,usuario_id',
             'club_id' => 'nullable|numeric|exists:clubes,id',
             'fecha_nacimiento' => 'required|date',
             'genero_id' => 'required|numeric|exists:generos,id',
             'nacionalidad_id' => 'required|numeric|exists:nacionalidades,id',
-            'tipo_identificacion_id' => 'required|numeric|exists:tipos_identificacion,id',
-            'numero_identificacion' => 'required|string|max:100|unique:deportistas,numero_identificacion',
             'elo_nacional' => 'nullable|integer|min:0',
             'elo_internacional' => 'nullable|integer|min:0',
             'fide_id' => 'nullable|string|max:50|unique:deportistas,fide_id',
-            'titulo_id' => 'nullable|numeric|exists:titulo,id',
+            'titulo_id' => 'nullable|numeric|exists:titulos,id',
             'estado' => 'required|boolean',
+        ],
+        [
+            'usuario_id.unique' => 'El usuario seleccionado ya está asociado a un deportista.',
         ]);
 
         if ($validator->fails()) {
@@ -89,13 +91,21 @@ class DeportistaController extends Controller
             ], 422);
         }
 
+        $usuario = Usuario::find($request->usuario_id);
+        if ($usuario->rol->nombre !== 'Deportista') {
+            return response()->json([
+                'errors' => ['usuario_id' => ['El usuario seleccionado no tiene el rol de Deportista.']]
+            ], 422);
+        }
+
         $validated = $validator->validated();
 
         $edad = Carbon::parse($validated['fecha_nacimiento'])->age;
 
-        $categoria = Categoria::where('edad_minima', '<=', $edad)
-                            ->where('edad_maxima', '>=', $edad)
-                            ->first();
+        $categoria = Categoria::where('nombre', '!=', 'Libre')
+            ->where('edad_minima', '<=', $edad)
+            ->where('edad_maxima', '>=', $edad)
+            ->first();
 
         $titulo = $validated['titulo_id'] ?? null;
         if(!$validated['titulo_id']) {
@@ -109,8 +119,6 @@ class DeportistaController extends Controller
             'fecha_nacimiento' => $validated['fecha_nacimiento'],
             'genero_id' => $validated['genero_id'],
             'nacionalidad_id' => $validated['nacionalidad_id'],
-            'tipo_identificacion_id' => $validated['tipo_identificacion_id'],
-            'numero_identificacion' => $validated['numero_identificacion'],
             'elo_nacional' => $validated['elo_nacional'] ?? null,
             'elo_internacional' => $validated['elo_internacional'] ?? null,
             'fide_id' => $validated['fide_id'] ?? null,
@@ -119,7 +127,7 @@ class DeportistaController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Deportista creada exitosamente',
+            'message' => 'Deportista creado exitosamente',
             'deportista' => $deportista
         ], 201);
     }
@@ -132,17 +140,14 @@ class DeportistaController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'usuario_id' => 'required|numeric|exists:usuarios,id',
             'club_id' => 'nullable|numeric|exists:clubes,id',
             'fecha_nacimiento' => 'required|date',
             'genero_id' => 'required|numeric|exists:generos,id',
             'nacionalidad_id' => 'required|numeric|exists:nacionalidades,id',
-            'tipo_identificacion_id' => 'required|numeric|exists:tipos_identificacion,id',
-            'numero_identificacion' => 'required|string|max:100|unique:deportistas,numero_identificacion,' . $id,
             'elo_nacional' => 'nullable|integer|min:0',
             'elo_internacional' => 'nullable|integer|min:0',
             'fide_id' => 'nullable|string|max:50|unique:deportistas,fide_id,' . $id,
-            'titulo_id' => 'nullable|numeric|exists:titulo,id',
+            'titulo_id' => 'nullable|numeric|exists:titulos,id',
             'estado' => 'required|boolean',
         ]);
 
@@ -156,13 +161,10 @@ class DeportistaController extends Controller
         $validated = $validator->validated();
 
         $deportista->update([
-            'usuario_id' => $validated['usuario_id'],
             'club_id' => $validated['club_id'] ?? null,
             'fecha_nacimiento' => $validated['fecha_nacimiento'],
             'genero_id' => $validated['genero_id'],
             'nacionalidad_id' => $validated['nacionalidad_id'],
-            'tipo_identificacion_id' => $validated['tipo_identificacion_id'],
-            'numero_identificacion' => $validated['numero_identificacion'],
             'elo_nacional' => $validated['elo_nacional'] ?? null,
             'elo_internacional' => $validated['elo_internacional'] ?? null,
             'fide_id' => $validated['fide_id'] ?? null,
@@ -187,5 +189,32 @@ class DeportistaController extends Controller
         $deportista->delete();
 
         return response()->json(['message' => 'Deportista eliminado correctamente'], 200);
+    }
+
+    public function actualizarCategoria($id)
+    {
+        $deportista = Deportista::find($id);
+        if (!$deportista) {
+            return response()->json(['message' => 'Deportista no encontrado'], 404);
+        }
+
+        $edad = Carbon::parse($deportista->fecha_nacimiento)->age;
+
+        $categoria = Categoria::where('nombre', '!=', 'Libre')
+            ->where('edad_minima', '<=', $edad)
+            ->where('edad_maxima', '>=', $edad)
+            ->first();
+
+        if (!$categoria) {
+            return response()->json(['message' => 'No se encontró una categoría adecuada para la edad del deportista'], 404);
+        }
+
+        $deportista->categoria_id = $categoria->id;
+        $deportista->save();
+
+        return response()->json([
+            'message' => 'Categoría del deportista actualizada correctamente',
+            'deportista' => $deportista
+        ], 200);
     }
 }

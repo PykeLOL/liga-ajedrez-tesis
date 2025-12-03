@@ -20,10 +20,10 @@ class ClubSeeder extends Seeder
         DB::table('clubes')->insert([
             [
                 'liga_id' => $ligaId,
-                'nombre' => 'Club de Ajedrez Villavicencio',
+                'nombre' => 'Club Titan Chess',
                 'ubicacion' => 'Villavicencio, Meta',
                 'presidente_id' => null,
-                'contacto' => 'clubvillavicencio@ajedrezmeta.org',
+                'contacto' => 'clubtitanchess@ajedrezmeta.org',
                 'logo' => null,
                 'created_at' => now(),
                 'updated_at' => now(),

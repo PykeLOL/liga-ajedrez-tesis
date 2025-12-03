@@ -17,7 +17,8 @@ class CreateUsuariosTable extends Migration
             $table->id();
             $table->text('nombre')->nullable(false);
             $table->text('apellido')->nullable(false);
-            $table->text('documento')->nullable(false);
+            $table->foreignId('tipo_identificacion_id')->constrained('tipos_identificacion')->onDelete('restrict');
+            $table->text('numero_identificacion')->nullable(false);
             $table->text('email')->unique()->nullable(false);
             $table->text('telefono')->nullable(true);
             $table->text('contraseña')->nullable(false);

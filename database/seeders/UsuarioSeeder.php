@@ -16,13 +16,16 @@ class UsuarioSeeder extends Seeder
         $rolAdminId = DB::table('roles')->where('nombre', 'Admin')->value('id');
         $rolPresidenteLigaId = DB::table('roles')->where('nombre', 'Presidente Liga')->value('id');
         $rolDeportistaId = DB::table('roles')->where('nombre', 'Deportista')->value('id');
+        $rolEntrenadorId = DB::table('roles')->where('nombre', 'Entrenador')->value('id');
+        $tipoIdentificacionId = DB::table('tipos_identificacion')->where('abreviacion', 'CC')->value('id');
 
         $users = [
             [
                 'nombre' => 'admin',
                 'apellido' => 'admin',
                 'email' => 'admin@admin.com',
-                'documento' => '123456789',
+                'tipo_identificacion_id' => $tipoIdentificacionId,
+                'numero_identificacion' => '123456789',
                 'contraseña' => Hash::make('admin'),
                 'rol_id' => $rolAdminId,
                 'created_at' => now(),
@@ -31,9 +34,10 @@ class UsuarioSeeder extends Seeder
             [
                 'nombre' => 'Nelson',
                 'apellido' => 'Arango',
-                'email' => 'xhd942@gmail.com',
-                'documento' => '1121967543',
-                'contraseña' => Hash::make('nelson123'),
+                'email' => 'presidente@gmail.com',
+                'tipo_identificacion_id' => $tipoIdentificacionId,
+                'numero_identificacion' => '1121967543',
+                'contraseña' => Hash::make('presidente'),
                 'rol_id' => $rolPresidenteLigaId,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -41,10 +45,22 @@ class UsuarioSeeder extends Seeder
             [
                 'nombre' => 'Brahian',
                 'apellido' => 'Pulido',
-                'email' => 'brahian@gmail.com',
-                'documento' => '987654321',
-                'contraseña' => Hash::make('brahian123'),
+                'email' => 'deportista@gmail.com',
+                'tipo_identificacion_id' => $tipoIdentificacionId,
+                'numero_identificacion' => '987654321',
+                'contraseña' => Hash::make('deportista'),
                 'rol_id' => $rolDeportistaId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'Juan',
+                'apellido' => 'Lopez',
+                'email' => 'entrenador@gmail.com',
+                'tipo_identificacion_id' => $tipoIdentificacionId,
+                'numero_identificacion' => '534634543',
+                'contraseña' => Hash::make('entrenador'),
+                'rol_id' => $rolEntrenadorId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

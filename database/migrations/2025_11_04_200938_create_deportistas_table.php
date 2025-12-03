@@ -15,7 +15,6 @@ class CreateDeportistasTable extends Migration
     {
         Schema::create('deportistas', function (Blueprint $table) {
             $table->id();
-            $table->string('numero_identificacion');
             $table->integer('elo_nacional')->nullable();
             $table->integer('elo_internacional')->nullable();
             $table->string('fide_id')->nullable();
@@ -27,7 +26,6 @@ class CreateDeportistasTable extends Migration
             $table->foreignId('categoria_id')->constrained('categorias')->onDelete('cascade');
             $table->foreignId('genero_id')->constrained('generos')->onDelete('cascade');
             $table->foreignId('nacionalidad_id')->constrained('nacionalidades')->onDelete('cascade');
-            $table->foreignId('tipo_identificacion_id')->constrained('tipos_identificacion')->onDelete('cascade');
             $table->foreignId('titulo_id')->nullable()->constrained('titulos')->onDelete('set null');
 
             $table->timestamps();

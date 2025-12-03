@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Usuario;
 use App\Models\Permiso;
 use Illuminate\Http\Request;
+use App\Models\TipoIdentificacion;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -14,14 +15,15 @@ class UsuarioController extends Controller
 {
     public function index()
     {
-        $usuarios = Usuario::with('rol')->get();
+        $usuarios = Usuario::with(['rol', 'tipoIdentificacion'])->get();
+
         $usuarios = $usuarios->map(function ($usuario) {
             return [
                 'id' => $usuario->id,
                 'nombre' => $usuario->nombre,
                 'apellido' => $usuario->apellido,
                 'email' => $usuario->email,
-                'documento' => $usuario->documento,
+                'identificacion' => $usuario->tipoIdentificacion->abreviacion . ' ' . $usuario->numero_identificacion,
                 'telefono' => $usuario->telefono,
                 'rol' => $usuario->rol ? $usuario->rol->nombre : 'Sin rol',
                 'imagen_path' => $usuario->imagen_path
@@ -45,7 +47,8 @@ class UsuarioController extends Controller
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
-            'documento' => 'required|string|max:50',
+            'tipo_identificacion_id' => 'required|integer|exists:tipos_identificacion,id',
+            'numero_identificacion' => 'required|string|max:50',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:50',
             'contraseña' => 'required|string|min:5|same:confirmar_contraseña',
@@ -77,7 +80,8 @@ class UsuarioController extends Controller
         $usuario = Usuario::create([
             'nombre' => $validated['nombre'],
             'apellido' => $validated['apellido'],
-            'documento' => $validated['documento'] ?? null,
+            'tipo_identificacion_id' => $validated['tipo_identificacion_id'],
+            'numero_identificacion' => $validated['numero_identificacion'] ?? null,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? null,
             'contraseña' => Hash::make($validated['contraseña']),
@@ -97,7 +101,8 @@ class UsuarioController extends Controller
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
-            'documento' => 'nullable|string|max:50',
+            'tipo_identificacion_id' => 'required|integer|exists:tipos_identificacion,id',
+            'numero_identificacion' => 'nullable|string|max:50',
             'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:50',
             'rol_id' => 'nullable|integer|exists:roles,id',
@@ -131,7 +136,8 @@ class UsuarioController extends Controller
         $usuario = Usuario::create([
             'nombre' => $validated['nombre'],
             'apellido' => $validated['apellido'],
-            'documento' => $validated['documento'] ?? null,
+            'tipo_identificacion_id' => $validated['tipo_identificacion_id'],
+            'numero_identificacion' => $validated['numero_identificacion'] ?? null,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? null,
             'contraseña' => Hash::make('ligadeajedrez'), // Contraseña por defecto para admin
@@ -156,7 +162,8 @@ class UsuarioController extends Controller
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
-            'documento' => 'nullable|string|max:50',
+            'tipo_identificacion_id' => 'required|integer|exists:tipos_identificacion,id',
+            'numero_identificacion' => 'nullable|string|max:50',
             'email' => 'required|email|unique:usuarios,email,' . $id,
             'telefono' => 'nullable|string|max:50',
             'rol_id' => 'nullable|integer|exists:roles,id',
@@ -198,7 +205,8 @@ class UsuarioController extends Controller
         $usuario->update([
             'nombre' => $validated['nombre'],
             'apellido' => $validated['apellido'],
-            'documento' => $validated['documento'] ?? $usuario->documento,
+            'tipo_identificacion_id' => $validated['tipo_identificacion_id'],
+            'numero_identificacion' => $validated['numero_identificacion'] ?? $usuario->numero_identificacion,
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? $usuario->telefono,
             'rol_id' => $validated['rol_id'] ?? $usuario->rol_id,
@@ -270,16 +278,26 @@ class UsuarioController extends Controller
             return response()->json(['error' => 'No autenticado'], 401);
         }
 
-        // Obtenemos permisos por rol y directos
         $rolePermisos = $usuario->rol->permisos ?? collect();
         $userPermisos = $usuario->permisos ?? collect();
 
-        // Unimos y filtramos duplicados
         $permisos = $rolePermisos->merge($userPermisos)->unique('id')->pluck('nombre');
 
         return response()->json([
             'usuario_id' => $usuario->id,
             'permisos' => $permisos,
         ]);
+    }
+
+    public function selectTiposIdentificacion()
+    {
+        $tiposIdentificacion = TipoIdentificacion::all(['id', 'nombre', 'abreviacion'])->map(function ($tipo) {
+            return [
+                'id' => $tipo->id,
+                'nombre' => $tipo->abreviacion . ' - ' . $tipo->nombre
+            ];
+        });
+
+        return response()->json($tiposIdentificacion);
     }
 }

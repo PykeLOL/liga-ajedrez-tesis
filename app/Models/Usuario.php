@@ -18,7 +18,8 @@ class Usuario extends Authenticatable implements JWTSubject
     protected $fillable = [
         'nombre',
         'apellido',
-        'documento',
+        'tipo_identificacion_id',
+        'numero_identificacion',
         'email',
         'telefono',
         'contraseña',
@@ -80,5 +81,10 @@ class Usuario extends Authenticatable implements JWTSubject
         }
         $userPermissions = $this->permisos ?? collect();
         return $rolePermissions->merge($userPermissions)->unique('id');
+    }
+
+    public function tipoIdentificacion()
+    {
+        return $this->belongsTo(TipoIdentificacion::class, 'tipo_identificacion_id');
     }
 }
