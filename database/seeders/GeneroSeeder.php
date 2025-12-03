@@ -17,6 +17,7 @@ class GeneroSeeder extends Seeder
         $generos = [
             ['nombre' => 'Masculino', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'Femenino', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Mixto', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'Otro', 'created_at' => now(), 'updated_at' => now()],
         ];
 

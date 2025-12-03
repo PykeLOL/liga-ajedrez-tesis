@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            TipoIdentificacionSeeder::class,
+            NacionalidadSeeder::class,
             RolSeeder::class,
             TipoAccionSeeder::class,
             ModuloSeeder::class,
@@ -21,10 +23,13 @@ class DatabaseSeeder extends Seeder
             LigaSeeder::class,
             ClubSeeder::class,
             CategoriaSeeder::class,
-            NacionalidadSeeder::class,
-            TipoIdentificacionSeeder::class,
             TituloSeeder::class,
             GeneroSeeder::class,
+            EntidadCertificacionSeeder::class,
+            EntrenadorSeeder::class,
+            CertificacionEntrenadorSeeder::class,
+            DeportistaSeeder::class,
+            CategoriaEntrenadorSeeder::class,
         ]);
     }
 }
