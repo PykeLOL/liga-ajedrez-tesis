@@ -35,24 +35,35 @@ class AuthController extends Controller
         }
         $user = auth('api')->user();
 
+        $cookie = cookie(
+            'auth_token',
+            $token,
+            auth('api')->factory()->getTTL(),
+            '/',
+            null,
+            false,
+            true,
+            false,
+            'Lax'
+        );
+
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'message' => 'Inicio de sesión exitoso',
             'user' => [
                 'id'     => $user->id,
-                'nombre' => $user->nombre ?? $user->name, // depende de tu columna
+                'nombre' => $user->nombre ?? $user->name,
                 'email'  => $user->email,
-                'rol'   => $user->rol ? $user->rol->nombre : 'Sin rol',
+                'rol'    => $user->rol ? $user->rol->nombre : 'Sin rol',
             ],
             'permisos' => $user->getAllPermisos()->pluck('nombre'),
-        ]);
+        ])->withCookie($cookie);
     }
 
     public function logout()
     {
-        auth()->logout();
-        return response()->json(['message' => 'Sesión cerrada']);
+        auth('api')->logout();
+        $forget = cookie('auth_token', null, -1, '/', null, false, true, false, 'Lax');
+        return response()->json(['message' => 'Sesión cerrada'])->withCookie($forget);
     }
 
     public function profile()
@@ -64,12 +75,21 @@ class AuthController extends Controller
     {
         try {
             $newToken = auth('api')->refresh();
+            $cookie = cookie(
+                'auth_token',
+                $newToken,
+                auth('api')->factory()->getTTL(),
+                '/',
+                null,
+                false,
+                true,
+                false,
+                'Lax'
+            );
 
             return response()->json([
-                'access_token' => $newToken,
-                'token_type'   => 'bearer',
-                'expires_in'   => auth('api')->factory()->getTTL() * 60
-            ]);
+                'message' => 'Sesión renovada correctamente'
+            ])->withCookie($cookie);
 
         } catch (TokenInvalidException $e) {
             return response()->json(['error' => 'Token inválido.'], 401);
@@ -77,6 +97,30 @@ class AuthController extends Controller
             return response()->json(['error' => 'Token en lista negra.'], 401);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Token no válido o expirado. Por favor, inicie sesión de nuevo.'], 401);
+        }
+    }
+
+    public function me()
+    {
+        try {
+            $user = auth('api')->user();
+
+            if (!$user) {
+                return response()->json(['message' => 'No autenticado'], 401);
+            }
+
+            return response()->json([
+                'user' => [
+                    'id'     => $user->id,
+                    'nombre' => $user->nombre ?? $user->name,
+                    'email'  => $user->email,
+                    'rol'    => $user->rol ? $user->rol->nombre : 'Sin rol',
+                ],
+                'permisos' => $user->getAllPermisos()->pluck('nombre'),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Sesión no válida'], 401);
         }
     }
 }

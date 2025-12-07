@@ -30,6 +30,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
 Route::post('/usuarios', [UsuarioController::class, 'store']);
 
+Route::middleware(['jwt.cookie'])->get('/me', [AuthController::class, 'me']);
+
 Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
