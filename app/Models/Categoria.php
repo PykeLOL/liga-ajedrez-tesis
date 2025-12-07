@@ -25,4 +25,11 @@ class Categoria extends Model
     {
         return $this->hasMany(Deportista::class, 'categoria_id');
     }
+
+    public function entrenadores()
+    {
+        return $this->belongsToMany(Entrenador::class, 'categorias_entrenador', 'categoria_id', 'entrenador_id')
+                    ->withPivot('ritmo_id', 'estado')
+                    ->withTimestamps();
+    }
 }

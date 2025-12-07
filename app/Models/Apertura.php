@@ -8,4 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Apertura extends Model
 {
     use HasFactory;
+
+    protected $table = 'aperturas';
+
+    protected $fillable = [
+        'eco',
+        'nombre',
+    ];
+
+    public $timestamps = true;
 }

@@ -52,7 +52,14 @@ class Entrenador extends Model
     public function categorias()
     {
         return $this->belongsToMany(Categoria::class, 'categorias_entrenador', 'entrenador_id', 'categoria_id')
-                    ->withPivot('estado')
+                    ->withPivot('ritmo_id', 'estado')
+                    ->withTimestamps();
+    }
+
+    public function ritmos()
+    {
+        return $this->belongsToMany(Ritmo::class, 'categorias_entrenador', 'entrenador_id', 'ritmo_id')
+                    ->withPivot('categoria_id', 'estado')
                     ->withTimestamps();
     }
 }

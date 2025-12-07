@@ -18,4 +18,9 @@ class Titulo extends Model
     ];
 
     public $timestamps = true;
+
+    public function deportistas()
+    {
+        return $this->hasMany(Deportista::class, 'titulo_id');
+    }
 }

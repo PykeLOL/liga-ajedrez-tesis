@@ -17,4 +17,14 @@ class Nacionalidad extends Model
     ];
 
     public $timestamps = true;
+
+    public function entrenadores()
+    {
+        return $this->hasMany(Entrenador::class, 'nacionalidad_id');
+    }
+
+    public function deportistas()
+    {
+        return $this->hasMany(Deportista::class, 'nacionalidad_id');
+    }
 }

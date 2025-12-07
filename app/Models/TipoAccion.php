@@ -17,4 +17,9 @@ class TipoAccion extends Model
     ];
 
     public $timestamps = true;
+
+    public function permisos()
+    {
+        return $this->hasMany(Permiso::class, 'tipo_accion_id');
+    }
 }

@@ -16,4 +16,14 @@ class Genero extends Model
     ];
 
     public $timestamps = true;
+
+    public function entrenadores()
+    {
+        return $this->hasMany(Entrenador::class, 'genero_id');
+    }
+
+    public function deportistas()
+    {
+        return $this->hasMany(Deportista::class, 'genero_id');
+    }
 }

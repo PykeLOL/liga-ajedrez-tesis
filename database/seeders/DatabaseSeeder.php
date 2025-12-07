@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
             CertificacionEntrenadorSeeder::class,
             DeportistaSeeder::class,
             CategoriaEntrenadorSeeder::class,
+            DiaSemanaSeeder::class,
+            AperturaSeeder::class,
+            RitmoSeeder::class,
         ]);
     }
 }

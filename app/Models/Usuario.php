@@ -87,4 +87,14 @@ class Usuario extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo(TipoIdentificacion::class, 'tipo_identificacion_id');
     }
+
+    public function deportista()
+    {
+        return $this->hasOne(Deportista::class, 'usuario_id');
+    }
+
+    public function entrenador()
+    {
+        return $this->hasOne(Entrenador::class, 'usuario_id');
+    }
 }
