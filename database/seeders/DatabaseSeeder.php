@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             TipoIdentificacionSeeder::class,
+            RitmoSeeder::class,
             NacionalidadSeeder::class,
             RolSeeder::class,
             TipoAccionSeeder::class,
@@ -32,7 +33,6 @@ class DatabaseSeeder extends Seeder
             CategoriaEntrenadorSeeder::class,
             DiaSemanaSeeder::class,
             AperturaSeeder::class,
-            RitmoSeeder::class,
         ]);
     }
 }

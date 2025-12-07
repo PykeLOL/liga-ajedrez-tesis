@@ -19,12 +19,14 @@ class CategoriaEntrenadorSeeder extends Seeder
         $usuarioEntrenadorId = DB::table('usuarios')->where('rol_id', $rolEntrenadorId)->value('id');
         $entrenadorId = DB::table('entrenadores')->where('usuario_id', $usuarioEntrenadorId)->value('id');
         $categoriasIds = DB::table('categorias')->pluck('id')->toArray();
+        $ritmoId = DB::table('ritmos')->where('nombre', 'Clásico')->value('id');
 
         $categoriaEntrenadorData = [];
         foreach ($categoriasIds as $categoriaId) {
             $categoriaEntrenadorData[] = [
                 'categoria_id' => $categoriaId,
                 'entrenador_id' => $entrenadorId,
+                'ritmo_id' => $ritmoId,
                 'estado' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
