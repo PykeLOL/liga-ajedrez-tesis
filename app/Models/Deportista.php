@@ -56,4 +56,14 @@ class Deportista extends Model
     {
         return $this->belongsTo(Titulo::class, 'titulo_id');
     }
+
+    public function eloHistorico()
+    {
+        return $this->hasMany(EloHistorico::class);
+    }
+
+    public function estadisticas()
+    {
+        return $this->hasOne(EstadisticasDeportista::class);
+    }
 }
