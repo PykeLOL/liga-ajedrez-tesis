@@ -33,6 +33,9 @@ class DatabaseSeeder extends Seeder
             CategoriaEntrenadorSeeder::class,
             DiaSemanaSeeder::class,
             AperturaSeeder::class,
+            EstadoEventoSeeder::class,
+            TipoEventoSeeder::class,
+            EstadoInscripcionSeeder::class,
         ]);
     }
 }
