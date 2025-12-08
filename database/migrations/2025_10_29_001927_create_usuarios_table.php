@@ -21,16 +21,14 @@ class CreateUsuariosTable extends Migration
             $table->text('numero_identificacion')->nullable(false);
             $table->text('email')->unique()->nullable(false);
             $table->text('telefono')->nullable(true);
-            $table->text('contraseña')->nullable(false);
-            $table->text('imagen_path')->nullable(true);
+            $table->string('contraseña');
+            $table->text('imagen_path')->nullable();
             $table->boolean('estado')->default(true);
-
-            $table->foreignId('rol_id')
-                  ->nullable()
-                  ->constrained('roles')
-                  ->onUpdate('cascade')
-                  ->onDelete('set null');
-
+            $table->foreignId('rol_id')->nullable()->constrained('roles')->onUpdate('cascade')->onDelete('set null');
+            $table->text('google_id')->nullable();
+            $table->text('google_token')->nullable();
+            $table->text('google_refresh')->nullable();
+            $table->timestamp('google_token_exp')->nullable();
             $table->timestamps();
         });
     }

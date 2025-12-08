@@ -68,4 +68,11 @@ class Entrenamiento extends Model
     {
         return $this->hasMany(EvaluacionEntrenador::class);
     }
+
+    public function deportistas()
+    {
+        return $this->belongsToMany(Deportista::class, 'entrenamiento_deportista')
+                    ->withPivot('asistio', 'observaciones', 'hora_llegada')
+                    ->withTimestamps();
+    }
 }

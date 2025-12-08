@@ -138,5 +138,13 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::put('/{id}', [EntrenadorController::class, 'update'])->middleware('permiso:editar-entrenadores');
         Route::delete('/{id}', [EntrenadorController::class, 'destroy'])->middleware('permiso:eliminar-entrenadores');
     });
+
+    Route::prefix('entrenamientos')->group(function () {
+        Route::get('/', [EntrenadorController::class, 'index']);
+    });
+
+    Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
+    Route::get('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback']);
+    Route::post('/trainings/{id}/google', [TrainingController::class, 'syncToGoogle']);
 });
 
