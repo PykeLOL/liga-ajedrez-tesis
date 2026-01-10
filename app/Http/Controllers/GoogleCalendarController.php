@@ -1,81 +1,74 @@
 <?php
 
-use Google_Client;
-use Google_Service_Calendar;
-use Google_Service_Calendar_Event;
+namespace App\Http\Controllers;
+
+use App\Models\Usuario;
+use Illuminate\Http\Request;
+use Google\Client as GoogleClient;
+use Google\Service\Calendar;
+use Google\Service\Calendar\Event;
+use Google\Service\Oauth2;
 
 class GoogleCalendarController extends Controller
 {
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
-        $client = new Google_Client();
-        $client->setClientId(env('GOOGLE_CLIENT_ID'));
-        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-        $client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
-        $client->addScope(Google_Service_Calendar::CALENDAR);
+        $user = auth()->user();
+
+        if (!$user) {
+            abort(401, 'No autenticado');
+        }
+
+        $client = new GoogleClient();
+        $client->setClientId(config('services.google.client_id'));
+        $client->setClientSecret(config('services.google.client_secret'));
+        $client->setRedirectUri(config('services.google.redirect'));
+
+        $client->addScope([
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/userinfo.email',
+        ]);
+
+        $client->setAccessType('offline');
+        $client->setPrompt('consent');
+        $client->setState($user->id);
 
         return redirect($client->createAuthUrl());
     }
 
     public function handleGoogleCallback(Request $request)
     {
-        $client = new Google_Client();
-        $client->setClientId(env('GOOGLE_CLIENT_ID'));
-        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-        $client->setRedirectUri(env('GOOGLE_REDIRECT_URI'));
+        $userId = $request->state;
+        $user = Usuario::find($userId);
+
+        if (!$user) {
+            abort(404, 'Usuario no encontrado');
+        }
+
+        $client = new GoogleClient();
+        $client->setClientId(config('services.google.client_id'));
+        $client->setClientSecret(config('services.google.client_secret'));
+        $client->setRedirectUri(config('services.google.redirect'));
 
         $token = $client->fetchAccessTokenWithAuthCode($request->code);
 
-        // Guardar $token en DB asociado al usuario
-        $user = auth()->user();
+        if (isset($token['error'])) {
+            return redirect('http://127.0.0.1:8001/entrenamientos?google=error');
+        }
+
+        $client->setAccessToken($token);
+
+        $oauth2 = new Oauth2($client);
+        $googleUser = $oauth2->userinfo->get();
+
+        // $user->google_id = $googleUser->id;
+        $user->google_id = $googleUser->email;
         $user->google_token = $token['access_token'];
         $user->google_refresh = $token['refresh_token'] ?? $user->google_refresh;
         $user->google_token_exp = now()->addSeconds($token['expires_in']);
         $user->save();
 
-        return redirect('/dashboard')->with('success', 'Cuenta de Google conectada');
-    }
-
-    public function syncToGoogle($trainingId)
-    {
-        $training = Training::findOrFail($trainingId);
-        $user = auth()->user();
-
-        $client = new Google_Client();
-        $client->setClientId(env('GOOGLE_CLIENT_ID'));
-        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-
-        if (!$user->google_token_exp || $user->google_token_exp < now()) {
-            try {
-                $client->refreshToken($user->google_refresh);
-                $newToken = $client->getAccessToken();
-
-                $user->google_token = $newToken['access_token'];
-                $user->google_token_exp = now()->addSeconds($newToken['expires_in']);
-                $user->save();
-            } catch (\Exception $e) {
-                return response()->json(['error' => 'No se pudo refrescar el token de Google. Conecta tu cuenta de nuevo.'], 401);
-            }
-        }
-
-        $client->setAccessToken($user->google_token);
-        $service = new Google_Service_Calendar($client);
-
-        $event = new Google_Service_Calendar_Event([
-            'summary' => $training->name,
-            'description' => $training->description,
-            'start' => ['dateTime' => $training->start_time->toRfc3339String()],
-            'end' => ['dateTime' => $training->end_time->toRfc3339String()],
-        ]);
-
-        $calendarId = 'primary';
-
-        try {
-            $service->events->insert($calendarId, $event);
-            return response()->json(['message' => 'Entrenamiento sincronizado con Google Calendar']);
-        } catch (\Google_Service_Exception $e) {
-            return response()->json(['error' => 'Error al sincronizar con Google Calendar', 'details' => $e->getMessage()], 500);
-        }
+        return redirect('http://127.0.0.1:8001/entrenamientos?google=ok');
     }
 }
-

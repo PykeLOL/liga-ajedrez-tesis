@@ -24,10 +24,12 @@ class CreateEntrenamientosTable extends Migration
             $table->time('hora_inicio');
             $table->time('hora_fin');
             $table->text('ubicacion')->nullable();
-            $table->string('url_mapa')->nullable();
+            $table->text('url_mapa')->nullable();
+            $table->text('coordenadas')->nullable();
             $table->foreignId('tipo_entrenamiento_id')->constrained('tipos_entrenamiento')->cascadeOnDelete();
             $table->foreignId('evento_id')->nullable()->constrained('eventos')->nullOnDelete();
             $table->text('descripcion')->nullable();
+            $table->text('google_event_id')->nullable();
             $table->timestamps();
         });
     }

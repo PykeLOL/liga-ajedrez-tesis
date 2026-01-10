@@ -14,6 +14,9 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\DeportistaController;
 use App\Http\Controllers\TipoAccionController;
 use App\Http\Controllers\EntrenadorController;
+use App\Http\Controllers\EntrenamientoController;
+use App\Http\Controllers\GoogleCalendarController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +34,8 @@ Route::post('/refresh', [AuthController::class, 'refresh']);
 Route::post('/usuarios', [UsuarioController::class, 'store']);
 
 Route::middleware(['jwt.cookie'])->get('/me', [AuthController::class, 'me']);
+
+Route::get('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback']);
 
 Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -140,11 +145,11 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('entrenamientos')->group(function () {
-        Route::get('/', [EntrenadorController::class, 'index']);
-    });
+        Route::get('/', [EntrenamientoController::class, 'index']);
+        Route::get('/mis-entrenamientos', [EntrenamientoController::class, 'misEntrenamientos']);
 
-    Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
-    Route::get('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback']);
-    Route::post('/trainings/{id}/google', [TrainingController::class, 'syncToGoogle']);
+        Route::post('/{id}/google', [EntrenamientoController::class, 'syncToGoogle']);
+        Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
+    });
 });
 

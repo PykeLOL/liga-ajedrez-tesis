@@ -66,4 +66,11 @@ class Deportista extends Model
     {
         return $this->hasOne(EstadisticasDeportista::class);
     }
+
+    public function entrenamientos()
+    {
+        return $this->belongsToMany(Entrenamiento::class, 'entrenamiento_deportista', 'deportista_id', 'entrenamiento_id')
+            ->withPivot('asistio', 'observaciones', 'hora_llegada')
+            ->withTimestamps();
+    }
 }

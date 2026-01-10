@@ -16,7 +16,7 @@ class Entrenamiento extends Model
         'genero_id', 'entrenador_id', 'fecha',
         'hora_inicio', 'hora_fin', 'ubicacion',
         'url_mapa', 'tipo_entrenamiento_id',
-        'evento_id', 'descripcion'
+        'evento_id', 'descripcion', 'google_event_id'
     ];
 
     public function plan()

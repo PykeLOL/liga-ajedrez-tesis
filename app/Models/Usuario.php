@@ -26,7 +26,11 @@ class Usuario extends Authenticatable implements JWTSubject
         'imagen_path',
         'estado',
         'rol_id',
-        'imagen_path'
+        'imagen_path',
+        'google_id',
+        'google_token',
+        'google_refresh',
+        'google_token_exp',
     ];
 
     protected $hidden = [

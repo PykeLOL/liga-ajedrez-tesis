@@ -115,6 +115,8 @@ class AuthController extends Controller
                     'nombre' => $user->nombre ?? $user->name,
                     'email'  => $user->email,
                     'rol'    => $user->rol ? $user->rol->nombre : 'Sin rol',
+                    'google_id' => $user->google_id,
+                    // 'google_email' => $user->google_email,
                 ],
                 'permisos' => $user->getAllPermisos()->pluck('nombre'),
             ]);
