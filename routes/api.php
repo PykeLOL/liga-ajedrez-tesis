@@ -6,6 +6,7 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LigaController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\EventoController;
 use App\Http\Controllers\ModuloController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\UsuarioController;
@@ -150,6 +151,13 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
 
         Route::post('/{id}/google', [EntrenamientoController::class, 'syncToGoogle']);
         Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
+    });
+
+    Route::prefix('eventos')->group(function () {
+        Route::get('/', [EventoController::class, 'index']);
+        Route::get('/tipo-eventos', [EventoController::class, 'tipoEventos']);
+        Route::get('/tipo/{tipo}', [EventoController::class, 'getEventosPorTipo']);
+
     });
 });
 
