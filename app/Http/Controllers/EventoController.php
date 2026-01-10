@@ -8,6 +8,12 @@ use Illuminate\Http\Request;
 
 class EventoController extends Controller
 {
+    public function index()
+    {
+        $eventos = Evento::all();
+        return response()->json($eventos);
+    }
+
     public function tipoEventos()
     {
         $tiposEvento = TipoEvento::all();
