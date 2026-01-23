@@ -37,7 +37,12 @@ Route::post('/usuarios', [UsuarioController::class, 'store']);
 Route::middleware(['jwt.cookie'])->get('/me', [AuthController::class, 'me']);
 
 Route::get('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback']);
+Route::prefix('eventos')->group(function () {
+        Route::get('/', [EventoController::class, 'index']);
+        Route::get('/tipo-eventos', [EventoController::class, 'tipoEventos']);
+        Route::get('/tipo/{tipo}', [EventoController::class, 'getEventosPorTipo']);
 
+    });
 Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -153,11 +158,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
     });
 
-    Route::prefix('eventos')->group(function () {
-        Route::get('/', [EventoController::class, 'index']);
-        Route::get('/tipo-eventos', [EventoController::class, 'tipoEventos']);
-        Route::get('/tipo/{tipo}', [EventoController::class, 'getEventosPorTipo']);
-
-    });
+    
 });
 

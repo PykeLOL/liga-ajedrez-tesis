@@ -50,6 +50,20 @@ class TipoEventoSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'nombre' => 'Reunion',
+                'abreviacion' => 'REU',
+                'descripcion' => 'Reuniones.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'Convocatoria',
+                'abreviacion' => 'CVA',
+                'descripcion' => 'Convocatorias.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
         DB::table('tipos_evento')->insert($tipos);
