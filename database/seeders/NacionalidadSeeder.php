@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Nacionalidad;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -24,8 +25,11 @@ class NacionalidadSeeder extends Seeder
             ['nombre' => 'México', 'codigo' => 'MEX', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'España', 'codigo' => 'ESP', 'created_at' => now(), 'updated_at' => now()],
             ['nombre' => 'Estados Unidos', 'codigo' => 'USA', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'Otro', 'codigo' => 'OTR', 'created_at' => now(), 'updated_at' => now()],
         ];
 
-        DB::table('nacionalidades')->insert($nacionalidades);
+        foreach ($nacionalidades as $nacionalidad) {
+            Nacionalidad::firstOrCreate(['nombre' => $nacionalidad['nombre']], $nacionalidad);
+        }
     }
 }

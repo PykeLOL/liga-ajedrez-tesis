@@ -14,10 +14,15 @@ class Club extends Model
     protected $fillable = [
         'liga_id',
         'nombre',
+        'descripcion',
         'ubicacion',
+        'direccion',
+        'url_mapa',
         'presidente_id',
         'contacto',
         'logo',
+        'documento_path',
+        'estado_id',
     ];
 
     public $timestamps = true;
@@ -30,5 +35,25 @@ class Club extends Model
     public function presidente()
     {
         return $this->belongsTo(Usuario::class, 'presidente_id');
+    }
+
+    public function deportistas()
+    {
+        return $this->hasMany(Deportista::class, 'club_id');
+    }
+
+    public function media()
+    {
+        return $this->hasMany(ClubMedia::class);
+    }
+
+    public function redesSociales()
+    {
+        return $this->hasMany(ClubRedSocial::class);
+    }
+
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class, 'estado_id');
     }
 }

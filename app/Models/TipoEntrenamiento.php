@@ -13,6 +13,8 @@ class TipoEntrenamiento extends Model
 
     protected $fillable = ['nombre', 'descripcion'];
 
+    public $timestamps = true;
+
     public function entrenamientos()
     {
         return $this->hasMany(Entrenamiento::class);

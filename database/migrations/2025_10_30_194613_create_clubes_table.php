@@ -17,13 +17,20 @@ class CreateClubesTable extends Migration
             $table->id();
             $table->unsignedBigInteger('liga_id')->nullable();
             $table->string('nombre');
+            $table->text('descripcion')->nullable();
             $table->string('ubicacion')->nullable();
+            $table->text('direccion')->nullable();
+            $table->text('url_mapa')->nullable();
             $table->unsignedBigInteger('presidente_id')->nullable();
             $table->text('contacto')->nullable();
             $table->string('logo')->nullable();
+            $table->string('documento_path')->nullable();
+            $table->unsignedBigInteger('estado_id')->nullable();
             $table->timestamps();
 
             $table->foreign('liga_id')->references('id')->on('ligas')->onDelete('set null');
+            $table->foreign('presidente_id')->references('id')->on('usuarios')->onDelete('set null');
+            $table->foreign('estado_id')->references('id')->on('estados')->onDelete('set null');
         });
     }
 

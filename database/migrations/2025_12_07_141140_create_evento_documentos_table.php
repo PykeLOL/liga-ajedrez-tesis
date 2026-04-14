@@ -18,7 +18,7 @@ class CreateEventoDocumentosTable extends Migration
             $table->foreignId('evento_id')->constrained('eventos')->onDelete('cascade');
             $table->string('nombre');
             $table->string('path');
-            $table->enum('tipo', ['pdf', 'excel', 'word', 'otro']);
+            $table->string('tipo');
             $table->text('descripcion')->nullable();
             $table->integer('orden')->nullable();
             $table->timestamps();

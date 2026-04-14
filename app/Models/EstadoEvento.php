@@ -13,6 +13,8 @@ class EstadoEvento extends Model
 
     protected $fillable = ['nombre'];
 
+    public $timestamps = true;
+
     public function eventos()
     {
         return $this->hasMany(Evento::class);

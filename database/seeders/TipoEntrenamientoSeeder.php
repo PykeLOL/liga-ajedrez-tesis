@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\TipoEntrenamiento;
 use Illuminate\Support\Facades\DB;
 
 class TipoEntrenamientoSeeder extends Seeder
@@ -24,6 +25,8 @@ class TipoEntrenamientoSeeder extends Seeder
             ['nombre' => 'Teórico', 'descripcion' => 'Estudio de aperturas y finales'],
         ];
 
-        DB::table('tipos_entrenamiento')->insert($tiposEntrenamiento);
+        foreach ($tiposEntrenamiento as $tipoEntrenamiento) {
+            TipoEntrenamiento::firstOrCreate(['nombre' => $tipoEntrenamiento['nombre']], $tipoEntrenamiento);
+        }
     }
 }

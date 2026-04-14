@@ -16,7 +16,7 @@ class CreateEventoMediaTable extends Migration
         Schema::create('evento_media', function (Blueprint $table) {
             $table->id();
             $table->foreignId('evento_id')->constrained('eventos')->onDelete('cascade');
-            $table->enum('tipo', ['imagen', 'video']);
+            $table->enum('tipo', ['imagen', 'video', 'url']);
             $table->string('path');
             $table->text('descripcion')->nullable();
             $table->integer('orden')->nullable();

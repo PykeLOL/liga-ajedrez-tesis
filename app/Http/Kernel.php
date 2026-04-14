@@ -40,6 +40,8 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
+            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Fruitcake\Cors\HandleCors::class,
             \App\Http\Middleware\JwtFromCookie::class,
             'throttle:api',

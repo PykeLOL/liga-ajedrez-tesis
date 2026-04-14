@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\EstadoInscripcion;
 use Illuminate\Support\Facades\DB;
 
 class EstadoInscripcionSeeder extends Seeder
@@ -21,6 +22,8 @@ class EstadoInscripcionSeeder extends Seeder
             ['nombre' => 'Cancelado', 'created_at' => now(), 'updated_at' => now()],
         ];
 
-        DB::table('estados_inscripcion')->insert($estados);
+        foreach ($estados as $estado) {
+            EstadoInscripcion::firstOrCreate(['nombre' => $estado['nombre']], $estado);
+        }
     }
 }

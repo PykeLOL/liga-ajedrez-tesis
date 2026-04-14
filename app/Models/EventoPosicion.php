@@ -19,6 +19,8 @@ class EventoPosicion extends Model
         'desempate',
     ];
 
+    public $timestamps = true;
+
     public function categoria()
     {
         return $this->belongsTo(EventoCategoria::class, 'evento_categoria_id');

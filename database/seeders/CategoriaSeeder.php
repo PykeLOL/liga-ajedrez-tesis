@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Categoria;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -98,6 +99,8 @@ class CategoriaSeeder extends Seeder
             ],
         ];
 
-        DB::table('categorias')->insert($categorias);
+        foreach ($categorias as $categoria) {
+            Categoria::firstOrCreate(['nombre' => $categoria['nombre']], $categoria);
+        }
     }
 }

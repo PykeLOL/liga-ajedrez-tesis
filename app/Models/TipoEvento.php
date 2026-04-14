@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class TipoEvento extends Model
 {
@@ -14,11 +15,21 @@ class TipoEvento extends Model
     protected $fillable = [
         'nombre',
         'abreviacion',
-        'descripcion'
+        'descripcion',
+        'slug'
     ];
+
+    public $timestamps = true;
 
     public function eventos()
     {
         return $this->hasMany(Evento::class);
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($tipo) {
+            $tipo->slug = Str::slug($tipo->nombre);
+        });
     }
 }

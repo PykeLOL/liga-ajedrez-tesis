@@ -17,6 +17,8 @@ class PlanDeportista extends Model
         'estado'
     ];
 
+    public $timestamps = true;
+
     public function plan()
     {
         return $this->belongsTo(PlanEntrenamiento::class, 'plan_entrenamiento_id');

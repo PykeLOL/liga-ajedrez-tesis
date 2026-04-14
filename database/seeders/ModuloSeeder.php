@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Modulo;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -97,6 +98,18 @@ class ModuloSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'nombre' => 'eventos',
+                'descripcion' => 'Administración de la información de los eventos deportivos.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'torneos',
+                'descripcion' => 'Administración de la información de los torneos deportivos.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
             // [
             //     'nombre' => 'perfil',
             //     'descripcion' => 'Administración la informacion de mi Perfil.',
@@ -105,6 +118,8 @@ class ModuloSeeder extends Seeder
             // ],
         ];
 
-        DB::table('modulos')->insert($modulos);
+        foreach ($modulos as $modulo) {
+            Modulo::firstOrCreate(['nombre' => $modulo['nombre']], $modulo);
+        }
     }
 }

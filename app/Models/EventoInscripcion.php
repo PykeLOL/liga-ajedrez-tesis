@@ -12,7 +12,6 @@ class EventoInscripcion extends Model
     protected $table = 'evento_inscripciones';
 
     protected $fillable = [
-        'evento_id',
         'evento_categoria_id',
         'deportista_id',
         'fecha_inscripcion',
@@ -23,12 +22,9 @@ class EventoInscripcion extends Model
         'estado_inscripcion_id',
     ];
 
-    public function evento()
-    {
-        return $this->belongsTo(Evento::class);
-    }
+    public $timestamps = true;
 
-    public function categoria()
+    public function eventoCategoria()
     {
         return $this->belongsTo(EventoCategoria::class, 'evento_categoria_id');
     }

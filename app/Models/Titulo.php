@@ -13,6 +13,7 @@ class Titulo extends Model
 
     protected $fillable = [
         'nombre',
+        'nombre_fide',
         'abreviacion',
         'es_fide'
     ];

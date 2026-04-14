@@ -16,6 +16,8 @@ class EventoOrganizador extends Model
         'club_id'
     ];
 
+    public $timestamps = true;
+
     public function evento()
     {
         return $this->belongsTo(Evento::class);

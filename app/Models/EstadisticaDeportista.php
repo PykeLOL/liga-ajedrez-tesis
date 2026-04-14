@@ -24,6 +24,8 @@ class EstadisticaDeportista extends Model
         'fecha_actualizacion',
     ];
 
+    public $timestamps = true;
+
     public function deportista()
     {
         return $this->belongsTo(Deportista::class);

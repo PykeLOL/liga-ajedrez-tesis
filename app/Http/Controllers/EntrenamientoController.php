@@ -105,17 +105,20 @@ class EntrenamientoController extends Controller
 
         $service = new Calendar($client);
 
-        $start = Carbon::createFromFormat(
-            'Y-m-d H:i:s',
-            $entrenamiento->fecha.' '.$entrenamiento->hora_inicio,
-            'America/Bogota'
-        );
+        if (!$entrenamiento->hora_inicio || !$entrenamiento->hora_fin) {
+            return response()->json([
+                'error' => 'El entrenamiento no tiene horas definidas'
+            ], 422);
+        }
 
-        $end = Carbon::createFromFormat(
-            'Y-m-d H:i:s',
-            $entrenamiento->fecha.' '.$entrenamiento->hora_fin,
-            'America/Bogota'
-        );
+        $start = Carbon::parse($entrenamiento->fecha.' '.$entrenamiento->hora_inicio, 'America/Bogota');
+        $end   = Carbon::parse($entrenamiento->fecha.' '.$entrenamiento->hora_fin, 'America/Bogota');
+
+        if ($end->lessThanOrEqualTo($start)) {
+            return response()->json([
+                'error' => 'La hora de fin debe ser mayor a la de inicio'
+            ], 422);
+        }
 
         $event = new Event([
             'summary' => 'Entrenamiento - '.$entrenamiento->tipo->nombre,

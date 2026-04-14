@@ -18,6 +18,7 @@ class CreateTiposEventoTable extends Migration
             $table->string('nombre');
             $table->string('abreviacion')->nullable();
             $table->text('descripcion')->nullable();
+            $table->text('slug')->nullable();
             $table->timestamps();
         });
     }

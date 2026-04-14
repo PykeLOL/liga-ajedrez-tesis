@@ -19,6 +19,8 @@ class EventoMedia extends Model
         'orden',
     ];
 
+    public $timestamps = true;
+
     public function evento()
     {
         return $this->belongsTo(Evento::class);

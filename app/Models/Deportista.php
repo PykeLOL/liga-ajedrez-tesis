@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 
 class Deportista extends Model
 {
@@ -25,7 +26,16 @@ class Deportista extends Model
         'estado',
     ];
 
+    protected $casts = [
+        'fecha_nacimiento' => 'date',
+    ];
+
     public $timestamps = true;
+
+    public function getFechaNacimientoAttribute($value)
+    {
+        return $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : null;
+    }
 
     public function usuario()
     {
@@ -72,5 +82,10 @@ class Deportista extends Model
         return $this->belongsToMany(Entrenamiento::class, 'entrenamiento_deportista', 'deportista_id', 'entrenamiento_id')
             ->withPivot('asistio', 'observaciones', 'hora_llegada')
             ->withTimestamps();
+    }
+
+    public function inscripciones()
+    {
+        return $this->hasMany(EventoInscripcion::class, 'deportista_id');
     }
 }

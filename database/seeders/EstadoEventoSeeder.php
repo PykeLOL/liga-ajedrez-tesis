@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\EstadoEvento;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +23,8 @@ class EstadoEventoSeeder extends Seeder
             ['nombre' => 'Cancelado', 'created_at' => now(), 'updated_at' => now()],
         ];
 
-        DB::table('estados_evento')->insert($estados);
+        foreach ($estados as $estado) {
+            EstadoEvento::firstOrCreate(['nombre' => $estado['nombre']], $estado);
+        }
     }
 }

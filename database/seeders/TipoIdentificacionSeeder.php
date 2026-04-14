@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\TipoIdentificacion;
 use Illuminate\Support\Facades\DB;
 
 class TipoIdentificacionSeeder extends Seeder
@@ -47,6 +48,8 @@ class TipoIdentificacionSeeder extends Seeder
             ],
         ];
 
-        DB::table('tipos_identificacion')->insert($tiposIdentificacion);
+        foreach ($tiposIdentificacion as $tipo) {
+            TipoIdentificacion::firstOrCreate(['nombre' => $tipo['nombre']], $tipo);
+        }
     }
 }

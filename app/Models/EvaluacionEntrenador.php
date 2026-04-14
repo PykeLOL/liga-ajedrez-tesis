@@ -16,6 +16,8 @@ class EvaluacionEntrenador extends Model
         'entrenador_id', 'rendimiento', 'comentarios'
     ];
 
+    public $timestamps = true;
+
     public function entrenamiento()
     {
         return $this->belongsTo(Entrenamiento::class);

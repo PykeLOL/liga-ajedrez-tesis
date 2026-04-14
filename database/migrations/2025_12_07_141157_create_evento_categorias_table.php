@@ -17,10 +17,11 @@ class CreateEventoCategoriasTable extends Migration
             $table->id();
             $table->foreignId('evento_id')->constrained('eventos')->onDelete('cascade');
             $table->foreignId('categoria_id')->constrained('categorias');
-            $table->foreignId('ritmo_id')->constrained('ritmos');
+            $table->foreignId('ritmo_id')->nullable()->constrained('ritmos');
             $table->integer('cupo_maximo')->nullable();
             $table->decimal('costo_inscripcion', 12, 2)->nullable();
             $table->foreignId('genero_id')->constrained('generos');
+            $table->integer('orden')->nullable();
             $table->timestamps();
         });
     }
