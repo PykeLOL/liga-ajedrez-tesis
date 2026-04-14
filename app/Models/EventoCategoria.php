@@ -18,7 +18,10 @@ class EventoCategoria extends Model
         'cupo_maximo',
         'costo_inscripcion',
         'genero_id',
+        'orden'
     ];
+
+    public $timestamps = true;
 
     public function evento()
     {

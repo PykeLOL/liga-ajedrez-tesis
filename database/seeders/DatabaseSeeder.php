@@ -12,7 +12,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            EstadoSeeder::class,
             TipoIdentificacionSeeder::class,
+            RedesSocialesSeeder::class,
             RitmoSeeder::class,
             NacionalidadSeeder::class,
             RolSeeder::class,
@@ -36,6 +38,8 @@ class DatabaseSeeder extends Seeder
             EstadoEventoSeeder::class,
             TipoEventoSeeder::class,
             EstadoInscripcionSeeder::class,
+            EventoSeeder::class,
+            ParametroSeeder::class,
         ]);
     }
 }

@@ -20,14 +20,23 @@ class Evento extends Model
         'direccion',
         'url_mapa',
         'fecha_inicio',
+        'hora_inicio',
         'fecha_fin',
         'estado_evento_id',
         'de_pago',
+        'valor_rango',
         'organizador_nombre',
         'organizador_contacto',
         'publicado',
         'es_oficial',
         'max_participantes',
+    ];
+
+    public $timestamps = true;
+
+    protected $casts = [
+        'fecha_inicio' => 'datetime',
+        'fecha_fin' => 'datetime',
     ];
 
     public function liga()
@@ -68,5 +77,15 @@ class Evento extends Model
     public function inscripciones()
     {
         return $this->hasMany(EventoInscripcion::class);
+    }
+
+    public function redesSociales()
+    {
+        return $this->hasMany(EventoRedSocial::class);
+    }
+
+    public function asistencias()
+    {
+        return $this->hasMany(EventoAsistencia::class);
     }
 }

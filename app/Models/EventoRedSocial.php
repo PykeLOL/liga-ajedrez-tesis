@@ -5,15 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EventoOrganizador extends Model
+class EventoRedSocial extends Model
 {
     use HasFactory;
 
-    protected $table = 'evento_organizadores';
+    protected $table = 'evento_redes_sociales';
 
     protected $fillable = [
         'evento_id',
-        'club_id'
+        'red_social_id',
+        'orden',
+        'url'
     ];
 
     public $timestamps = true;
@@ -23,8 +25,8 @@ class EventoOrganizador extends Model
         return $this->belongsTo(Evento::class);
     }
 
-    public function club()
+    public function redSocial()
     {
-        return $this->belongsTo(Club::class);
+        return $this->belongsTo(RedSocial::class);
     }
 }

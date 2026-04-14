@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\TipoEvento;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,20 @@ class TipoEventoSeeder extends Seeder
                 'nombre' => 'Torneo',
                 'abreviacion' => 'TOR',
                 'descripcion' => 'Competencias formales de ajedrez.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'Reunión',
+                'abreviacion' => 'REU',
+                'descripcion' => 'Reuniones de socios o miembros de la liga.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'Convocatoria',
+                'abreviacion' => 'CVC',
+                'descripcion' => 'Convocatorias para eventos o competencias.',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -52,6 +67,8 @@ class TipoEventoSeeder extends Seeder
             ],
         ];
 
-        DB::table('tipos_evento')->insert($tipos);
+        foreach ($tipos as $tipo) {
+            TipoEvento::firstOrCreate(['nombre' => $tipo['nombre']], $tipo);
+        }
     }
 }

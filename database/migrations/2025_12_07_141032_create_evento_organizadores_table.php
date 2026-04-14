@@ -17,6 +17,7 @@ class CreateEventoOrganizadoresTable extends Migration
             $table->id();
             $table->foreignId('evento_id')->constrained('eventos')->onDelete('cascade');
             $table->foreignId('club_id')->constrained('clubes');
+            $table->unique(['evento_id', 'club_id']);
             $table->timestamps();
         });
     }
