@@ -19,6 +19,8 @@ class Entrenamiento extends Model
         'evento_id', 'descripcion', 'google_event_id'
     ];
 
+    public $timestamps = true;
+
     public function plan()
     {
         return $this->belongsTo(PlanEntrenamiento::class, 'plan_entrenamiento_id');

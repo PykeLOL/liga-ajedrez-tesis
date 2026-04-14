@@ -18,6 +18,8 @@ class PlanEntrenamientoHorario extends Model
         'hora_fin'
     ];
 
+    public $timestamps = true;
+
     public function plan()
     {
         return $this->belongsTo(PlanEntrenamiento::class, 'plan_entrenamiento_id');

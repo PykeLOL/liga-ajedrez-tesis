@@ -17,6 +17,8 @@ class PlanEntrenamiento extends Model
         'fecha_inicio', 'fecha_fin', 'evento_id'
     ];
 
+    public $timestamps = true;
+
     public function club()
     {
         return $this->belongsTo(Club::class);

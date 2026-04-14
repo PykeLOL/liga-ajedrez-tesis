@@ -16,6 +16,8 @@ class EntrenamientoDeportista extends Model
         'asistio', 'hora_llegada', 'observaciones'
     ];
 
+    public $timestamps = true;
+
     public function entrenamiento()
     {
         return $this->belongsTo(Entrenamiento::class);
