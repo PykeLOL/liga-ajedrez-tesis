@@ -210,5 +210,5 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::put('/{id}', [TorneoController::class, 'update'])->middleware('permiso:editar-eventos');
         Route::delete('/{id}', [TorneoController::class, 'destroy'])->middleware('permiso:eliminar-eventos');
     });
-
+});
 
