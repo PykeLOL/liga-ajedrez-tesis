@@ -22,6 +22,8 @@ class Partida extends Model
         'resultado',
     ];
 
+    public $timestamps = true;
+
     public function eventoCategoria()
     {
         return $this->belongsTo(EventoCategoria::class, 'evento_categoria_id');

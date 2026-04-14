@@ -23,6 +23,8 @@ class EloHistorico extends Model
         'fecha',
     ];
 
+    public $timestamps = true;
+
     public function deportista()
     {
         return $this->belongsTo(Deportista::class);
