@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\TipoAccion;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -65,6 +66,8 @@ class TipoAccionSeeder extends Seeder
             ],
         ];
 
-        DB::table('tipo_accion')->insert($acciones);
+        foreach ($acciones as $accion) {
+            TipoAccion::firstOrCreate(['nombre' => $accion['nombre']], $accion);
+        }
     }
 }

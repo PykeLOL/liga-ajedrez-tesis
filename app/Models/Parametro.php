@@ -5,23 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Titulo extends Model
+class Parametro extends Model
 {
     use HasFactory;
 
-    protected $table = 'titulos';
+    protected $table = 'parametros';
 
     protected $fillable = [
+        'liga_id',
         'nombre',
-        'nombre_fide',
-        'abreviacion',
-        'es_fide'
+        'valor'
     ];
 
     public $timestamps = true;
 
-    public function deportistas()
+    public function liga()
     {
-        return $this->hasMany(Deportista::class, 'titulo_id');
+        return $this->belongsTo(Liga::class);
     }
 }

@@ -5,46 +5,99 @@ namespace Database\Seeders;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class DeportistaSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
         $rolDeportistaId = DB::table('roles')->where('nombre', 'Deportista')->value('id');
-        $usuarioDeportistaId = DB::table('usuarios')->where('rol_id', $rolDeportistaId)->value('id');
+        $usuarioDeportistaId = DB::table('usuarios')
+            ->where('rol_id', $rolDeportistaId)
+            ->value('id');
+
         $generoId = DB::table('generos')->where('nombre', 'Masculino')->value('id');
         $nacionalidadId = DB::table('nacionalidades')->where('nombre', 'Colombia')->value('id');
         $clubId = DB::table('clubes')->where('nombre', 'Club Titan Chess')->value('id');
-        $fecha_nacimiento = '2001-10-15';
-        $edad = Carbon::parse($fecha_nacimiento)->age;
-        $categoriaId = DB::table('categorias')->where('nombre', '!=', 'Libre')
+
+        $fechaNacimiento = '2001-10-15';
+        $edad = Carbon::parse($fechaNacimiento)->age;
+
+        $categoriaId = DB::table('categorias')
+            ->where('nombre', '!=', 'Libre')
             ->where('edad_minima', '<=', $edad)
             ->where('edad_maxima', '>=', $edad)
             ->value('id');
-        $tituloId = DB::table('titulos')->where('abreviacion', 'ST')->value('id');
 
-        $deportistas = [
+        $this->crearDeportista(
+            $usuarioDeportistaId,
+            144413246,
+            $fechaNacimiento,
+            $generoId,
+            $nacionalidadId,
+            $clubId,
+            $categoriaId
+        );
+
+        $this->crearDeportista(
+            5,
+            1503014,
+            $fechaNacimiento,
+            $generoId,
+            $nacionalidadId,
+            $clubId,
+            $categoriaId
+        );
+    }
+
+    private function crearDeportista(
+        $usuarioId,
+        $fideId,
+        $fechaNacimiento,
+        $generoId,
+        $nacionalidadId,
+        $clubId,
+        $categoriaId
+    ) {
+
+        $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
+        $response = Http::get($url);
+
+        if (!$response->successful()) {
+            return;
+        }
+
+        $data = $response->json();
+
+        $history = $data['history'][0] ?? [];
+
+        $classical = $history['classical_rating'] ?? 0;
+        $rapid = $history['rapid_rating'] ?? 0;
+        $blitz = $history['blitz_rating'] ?? 0;
+
+        $eloMasAlto = max($classical, $rapid, $blitz);
+
+        $tituloId = DB::table('titulos')
+            ->where('nombre_fide', $data['fide_title'] ?? null)
+            ->value('id')
+            ?? DB::table('titulos')->where('abreviacion', 'ST')->value('id');
+
+        DB::table('deportistas')->updateOrInsert(
+            ['usuario_id' => $usuarioId],
             [
-                'usuario_id' => $usuarioDeportistaId,
                 'club_id' => $clubId,
                 'categoria_id' => $categoriaId,
-                'fecha_nacimiento' => $fecha_nacimiento,
+                'fecha_nacimiento' => $fechaNacimiento,
                 'genero_id' => $generoId,
                 'nacionalidad_id' => $nacionalidadId,
                 'elo_nacional' => 0,
-                'elo_internacional' => 0,
+                'elo_internacional' => $eloMasAlto,
+                'fide_id' => $fideId,
                 'titulo_id' => $tituloId,
                 'estado' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
-        ];
-
-        DB::table('deportistas')->insert($deportistas);
+        );
     }
 }

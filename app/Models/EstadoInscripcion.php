@@ -13,6 +13,8 @@ class EstadoInscripcion extends Model
 
     protected $fillable = ['nombre'];
 
+    public $timestamps = true;
+
     public function inscripciones()
     {
         return $this->hasMany(EventoInscripcion::class);

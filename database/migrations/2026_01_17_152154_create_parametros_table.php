@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateTitulosTable extends Migration
+class CreateParametrosTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,13 @@ class CreateTitulosTable extends Migration
      */
     public function up()
     {
-        Schema::create('titulos', function (Blueprint $table) {
+        Schema::create('parametros', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre');
-            $table->string('nombre_fide')->nullable();
-            $table->string('abreviacion')->nullable(); // Ej: GM, IM, etc.
-            $table->boolean('es_fide')->default(false); // TRUE si es oficial FIDE
+            $table->unsignedBigInteger('liga_id');
+            $table->text('nombre')->unique();
+            $table->text('valor');
+
+            $table->foreign('liga_id')->references('id')->on('ligas')->onDelete('set null');
             $table->timestamps();
         });
     }
@@ -30,6 +31,6 @@ class CreateTitulosTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('titulos');
+        Schema::dropIfExists('parametros');
     }
 }

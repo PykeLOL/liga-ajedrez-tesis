@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Ritmo;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -35,6 +36,8 @@ class RitmoSeeder extends Seeder
             ],
         ];
 
-        DB::table('ritmos')->insert($ritmos);
+        foreach ($ritmos as $ritmo) {
+            Ritmo::firstOrCreate(['nombre' => $ritmo['nombre']], $ritmo);
+        }
     }
 }

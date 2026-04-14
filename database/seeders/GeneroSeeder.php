@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Genero;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +22,8 @@ class GeneroSeeder extends Seeder
             ['nombre' => 'Otro', 'created_at' => now(), 'updated_at' => now()],
         ];
 
-        DB::table('generos')->insert($generos);
+        foreach ($generos as $genero) {
+            Genero::firstOrCreate(['nombre' => $genero['nombre']], $genero);
+        }
     }
 }
