@@ -37,7 +37,7 @@ class PermisoController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255|unique:permisos,nombre',
             'descripcion' => 'required|string|max:255',
             'tipo_accion_id'  => 'required|integer|exists:tipo_accion,id',
@@ -46,6 +46,14 @@ class PermisoController extends Controller
             'nombre.unique' => 'Este Permiso ya existe.',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error de validación.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
         $permiso = Permiso::create([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
@@ -66,7 +74,7 @@ class PermisoController extends Controller
             return response()->json(['message' => 'Permiso no encontrado'], 404);
         }
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255|unique:permisos,nombre,' . $id,
             'descripcion' => 'required|string|max:255',
             'tipo_accion_id'  => 'required|integer|exists:tipo_accion,id',
@@ -75,6 +83,14 @@ class PermisoController extends Controller
             'nombre.unique' => 'Este Permiso ya existe.',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error de validación.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
         $permiso->update([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],

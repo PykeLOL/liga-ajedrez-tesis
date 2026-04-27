@@ -11,7 +11,7 @@ class CategoriaController extends Controller
 {
     public function index()
     {
-        $categorias = Categoria::with('presidente')->get();
+        $categorias = Categoria::all();
         $categorias = $categorias->map(function ($categoria) {
             return [
                 'id' => $categoria->id,

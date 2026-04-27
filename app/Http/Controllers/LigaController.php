@@ -18,7 +18,7 @@ class LigaController extends Controller
                 'id' => $liga->id,
                 'nombre' => $liga->nombre,
                 'descripcion' => $liga->descripcion,
-                'nombre_presidente' => $liga->presidente->nombre . ' ' . $liga->presidente->apellido,
+                'nombre_presidente' => $liga->presidente ? $liga->presidente->nombre . ' ' . $liga->presidente->apellido : null,
                 'logo' => $liga->logo,
                 'clubes' => $liga->clubes->map(function ($club) {
                     return [

@@ -17,7 +17,6 @@ class CreateCategoriasEntrenadorTable extends Migration
             $table->id();
             $table->foreignId('categoria_id')->unique()->constrained('categorias');
             $table->foreignId('entrenador_id')->constrained('entrenadores')->onDelete('cascade');
-            $table->foreignId('ritmo_id')->constrained('ritmos');
             $table->boolean('estado')->default(true);
             $table->timestamps();
         });

@@ -178,7 +178,13 @@ class ClubController extends Controller
             ],
 
             'redes_sociales' => 'nullable|array',
-            'redes_sociales.*.id' => 'nullable|exists:club_redes_sociales,id',
+            'redes_sociales.*.id' => [
+                'nullable',
+                Rule::exists('club_redes_sociales', 'id')
+                    ->where(function ($query) use ($club) {
+                        $query->where('club_id', $club->id);
+                    }),
+            ],
             'redes_sociales.*.orden' => 'required|integer|min:1',
             'redes_sociales.*.red_social_id' => 'exists:redes_sociales,id',
             'redes_sociales.*.url' => 'url',
