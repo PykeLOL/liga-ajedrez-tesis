@@ -69,7 +69,7 @@ class LigaController extends Controller
         $liga = Liga::create([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
-            'presidente_id' => $validated['presidente_id'],
+            'presidente_id' => $validated['presidente_id'] ?? null,
             'logo' => $path,
         ]);
 
@@ -110,7 +110,7 @@ class LigaController extends Controller
         $liga->update([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
-            'presidente_id' => $validated['presidente_id'],
+            'presidente_id' => $validated['presidente_id'] ?? null,
             'logo' => $path,
         ]);
 
