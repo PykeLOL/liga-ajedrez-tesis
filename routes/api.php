@@ -58,22 +58,22 @@ Route::prefix('select')->group(function () {
 });
 
 Route::prefix('home')->group(function () {
-    Route::prefix('/eventos')->group(function () {
+    Route::prefix('eventos')->group(function () {
         Route::get('/', [EventoController::class, 'indexHome']);
         Route::get('/tipo/{tipo}', [EventoController::class, 'getEventosPorTipo']);
         Route::get('/{id}', [EventoController::class, 'showPublic']);
     });
 
-    Route::prefix('/clubes')->group(function () {
+    Route::prefix('clubes')->group(function () {
         Route::get('/', [ClubController::class, 'indexHome']);
         Route::get('/{id}', [ClubController::class, 'showPublic']);
     });
 
-    Route::prefix('/chesstools')->group(function () {
+    Route::prefix('chesstools')->group(function () {
         Route::get('/{fide_id}', [ChesstoolsController::class, 'show']);
     });
 
-    Route::prefix('/deportistas')->group(function () {
+    Route::prefix('deportistas')->group(function () {
         Route::get('/', [DeportistaController::class, 'indexHome']);
         Route::get('/{id}', [DeportistaController::class, 'showPublic']);
     });
@@ -103,7 +103,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('roles')->group(function () {
-        Route::get('/select', [RolController::class, 'index']);
         Route::get('/', [RolController::class, 'index'])->middleware('permiso:ver-roles');
         Route::get('/{id}', [RolController::class, 'show'])->middleware('permiso:editar-roles');
         Route::post('/', [RolController::class, 'store'])->middleware('permiso:crear-roles');
@@ -125,7 +124,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('ligas')->group(function () {
-        Route::get('/select', [LigaController::class, 'index']);
         Route::get('/', [LigaController::class, 'index'])->middleware('permiso:ver-ligas');
         Route::post('/', [LigaController::class, 'store'])->middleware('permiso:crear-ligas');
         Route::get('/{id}', [LigaController::class, 'show'])->middleware('permiso:editar-ligas');
@@ -134,7 +132,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('clubes')->group(function () {
-        Route::get('/select', [ClubController::class, 'index']);
         Route::get('/', [ClubController::class, 'index'])->middleware('permiso:ver-clubes');
         Route::post('/', [ClubController::class, 'store'])->middleware('permiso:crear-clubes');
         Route::get('/{id}', [ClubController::class, 'show'])->middleware('permiso:editar-clubes');
@@ -143,7 +140,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('categorias')->group(function () {
-        Route::get('/select', [CategoriaController::class, 'index']);
         Route::get('/', [CategoriaController::class, 'index'])->middleware('permiso:ver-categorias');
         Route::post('/', [CategoriaController::class, 'store'])->middleware('permiso:crear-categorias');
         Route::get('/{id}', [CategoriaController::class, 'show'])->middleware('permiso:editar-categorias');
@@ -152,7 +148,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('tipo-accion')->group(function () {
-        Route::get('/select', [TipoAccionController::class, 'index']);
         Route::get('/', [TipoAccionController::class, 'index'])->middleware('permiso:ver-tipo-accion');
         Route::post('/', [TipoAccionController::class, 'store'])->middleware('permiso:crear-tipo-accion');
         Route::get('/{id}', [TipoAccionController::class, 'show'])->middleware('permiso:editar-tipo-accion');
@@ -161,7 +156,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
     });
 
     Route::prefix('modulos')->group(function () {
-        Route::get('/select', [ModuloController::class, 'index']);
         Route::get('/', [ModuloController::class, 'index'])->middleware('permiso:ver-modulos');
         Route::post('/', [ModuloController::class, 'store'])->middleware('permiso:crear-modulos');
         Route::get('/{id}', [ModuloController::class, 'show'])->middleware('permiso:editar-modulos');
@@ -195,7 +189,7 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
     });
 
-    Route::prefix('/eventos')->group(function () {
+    Route::prefix('eventos')->group(function () {
         Route::get('/', [EventoController::class, 'index'])->middleware('permiso:ver-eventos');
         Route::post('/', [EventoController::class, 'store'])->middleware('permiso:crear-eventos');
         Route::get('/{id}', [EventoController::class, 'show'])->middleware('permiso:editar-eventos');
@@ -203,7 +197,7 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::delete('/{id}', [EventoController::class, 'destroy'])->middleware('permiso:eliminar-eventos');
     });
 
-    Route::prefix('/torneos')->group(function () {
+    Route::prefix('torneos')->group(function () {
         Route::get('/', [TorneoController::class, 'index'])->middleware('permiso:ver-eventos');
         Route::post('/', [TorneoController::class, 'store'])->middleware('permiso:crear-eventos');
         Route::get('/{id}', [TorneoController::class, 'show'])->middleware('permiso:editar-eventos');
