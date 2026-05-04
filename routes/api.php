@@ -6,6 +6,7 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LigaController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ForoController;
 use App\Http\Controllers\SelectController;
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\ModuloController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\TorneoController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\DeportistaController;
 use App\Http\Controllers\TipoAccionController;
 use App\Http\Controllers\ChesstoolsController;
@@ -67,6 +69,7 @@ Route::prefix('home')->group(function () {
     Route::prefix('clubes')->group(function () {
         Route::get('/', [ClubController::class, 'indexHome']);
         Route::get('/{id}', [ClubController::class, 'showPublic']);
+        Route::post('/solicitud/registrar', [ClubController::class, 'registrarSolicitud']);
     });
 
     Route::prefix('chesstools')->group(function () {
@@ -76,6 +79,29 @@ Route::prefix('home')->group(function () {
     Route::prefix('deportistas')->group(function () {
         Route::get('/', [DeportistaController::class, 'indexHome']);
         Route::get('/{id}', [DeportistaController::class, 'showPublic']);
+    });
+
+    Route::prefix('foro')->group(function () {
+        Route::get('/', [ForoController::class, 'index']);
+        Route::get('/{id}', [ForoController::class, 'show']);
+    });
+
+    Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
+        Route::prefix('foro')->group(function () {
+            Route::post('/', [ForoController::class, 'store']);
+            Route::delete('/{id}', [ForoController::class, 'destroyHome']);
+            Route::post('/comentar/{id}', [ForoController::class, 'comentarPublicacion']);
+            Route::delete('/comentar/{foroId}/{comentarioId}', [ForoController::class, 'eliminarComentario']);
+            Route::post('/reaccion/{foroId}/{comentarioId}', [ForoController::class, 'reaccionarComentario']);
+            Route::delete('/reaccion/{foroId}/{comentarioId}', [ForoController::class, 'eliminarReaccionComentario']);
+        });
+
+        Route::prefix('solicitudes')->group(function () {
+            Route::get('/', [SolicitudController::class, 'misSolicitudes']);
+            Route::get('/{id}', [SolicitudController::class, 'verSolicitud']);
+            Route::post('/club', [SolicitudController::class, 'storeClub']);
+            Route::post('/deportista', [SolicitudController::class, 'storeDeportista']);
+        });
     });
 });
 
@@ -203,6 +229,20 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/{id}', [TorneoController::class, 'show'])->middleware('permiso:editar-eventos');
         Route::put('/{id}', [TorneoController::class, 'update'])->middleware('permiso:editar-eventos');
         Route::delete('/{id}', [TorneoController::class, 'destroy'])->middleware('permiso:eliminar-eventos');
+    });
+
+    Route::prefix('foro')->group(function () {
+        Route::get('/', [ForoController::class, 'index'])->middleware('permiso:ver-foros');
+        Route::post('/', [ForoController::class, 'store'])->middleware('permiso:crear-foros');
+        Route::get('/{id}', [ForoController::class, 'show'])->middleware('permiso:editar-foros');
+        Route::put('/{id}', [ForoController::class, 'update'])->middleware('permiso:editar-foros');
+        Route::delete('/{id}', [ForoController::class, 'destroy'])->middleware('permiso:eliminar-foros');
+    });
+
+    Route::prefix('solicitudes')->group(function () {
+        Route::get('/', [SolicitudController::class, 'index'])->middleware('permiso:ver-solicitudes');
+        Route::get('/{id}', [SolicitudController::class, 'show'])->middleware('permiso:editar-solicitudes');
+        Route::put('/{id}', [SolicitudController::class, 'actualizarEstado'])->middleware('permiso:editar-solicitudes');
     });
 });
 

@@ -53,14 +53,6 @@ class PermisoSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // [
-            //     'nombre' => "editar-perfil",
-            //     'descripcion' => "Permite al usuario editar su información personal en su perfil.",
-            //     'tipo_accion_id' => $acciones->firstWhere('nombre', 'editar')->id ?? null,
-            //     'modulo_id' => $modulos->firstWhere('nombre', 'usuarios')->id ?? null,
-            //     'created_at' => now(),
-            //     'updated_at' => now(),
-            // ],
         ];
 
         $permisos = array_merge($permisos, $especiales);

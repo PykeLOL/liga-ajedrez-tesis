@@ -110,12 +110,18 @@ class ModuloSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // [
-            //     'nombre' => 'perfil',
-            //     'descripcion' => 'Administración la informacion de mi Perfil.',
-            //     'created_at' => now(),
-            //     'updated_at' => now(),
-            // ],
+            [
+                'nombre' => 'foros',
+                'descripcion' => 'Administración de la información de los foros de discusión.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'solicitudes',
+                'descripcion' => 'Administración de la información de las solicitudes de registro.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
         foreach ($modulos as $modulo) {

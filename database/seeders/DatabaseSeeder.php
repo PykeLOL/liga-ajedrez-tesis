@@ -40,6 +40,10 @@ class DatabaseSeeder extends Seeder
             EstadoInscripcionSeeder::class,
             EventoSeeder::class,
             ParametroSeeder::class,
+            ReaccionSeeder::class,
+            PaisSeeder::class,
+            DepartamentoSeeder::class,
+            MunicipioSeeder::class,
         ]);
     }
 }

@@ -101,4 +101,9 @@ class Usuario extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Entrenador::class, 'usuario_id');
     }
+
+    public function solicitudes()
+    {
+        return $this->hasMany(Solicitud::class, 'usuario_id');
+    }
 }
