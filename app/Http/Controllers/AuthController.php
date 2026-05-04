@@ -54,6 +54,7 @@ class AuthController extends Controller
                 'nombre' => $user->nombre ?? $user->name,
                 'email'  => $user->email,
                 'rol'    => $user->rol ? $user->rol->nombre : 'Sin rol',
+                'imagen_path' => $user->imagen_path,
             ],
             'permisos' => $user->getAllPermisos()->pluck('nombre'),
         ])->withCookie($cookie);

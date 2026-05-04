@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\ClubRedSocial;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ClubController extends Controller
@@ -55,6 +56,7 @@ class ClubController extends Controller
             'url_mapa' => 'nullable|url',
             'contacto' => 'nullable|email|max:255',
             'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'documento' => 'nullable|file|mimes:pdf|max:10000',
 
             'media' => 'required|array|min:1',
             'media.*.tipo' => 'required|in:imagen,video,url',
@@ -90,6 +92,11 @@ class ClubController extends Controller
             $path = $request->file('logo')->store('clubes/logo', 'public');
         }
 
+        if($request->hasFile('documento')) {
+            $documentoPath = $request->file('documento')->store('clubes/documentos', 'public');
+            $validated['documento_path'] = $documentoPath;
+        }
+
         $club = Club::create([
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'],
@@ -100,6 +107,7 @@ class ClubController extends Controller
             'direccion' => $validated['direccion'],
             'url_mapa' => $validated['url_mapa'],
             'logo' => $path,
+            'documento_path' => $validated['documento_path'] ?? null,
         ]);
 
         if ($request->filled('media')) {
@@ -161,6 +169,7 @@ class ClubController extends Controller
             'url_mapa' => 'nullable|url',
             'contacto' => 'nullable|email|max:255',
             'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'documento' => 'nullable|file|mimes:pdf|max:10000',
 
             'media' => 'nullable|array',
             'media.*.id' => 'nullable|exists:club_media,id',
@@ -219,6 +228,15 @@ class ClubController extends Controller
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('clubes/logo', 'public');
             $club->logo = $path;
+            $club->save();
+        }
+
+        if ($request->hasFile('documento')) {
+            if ($club->documento_path) {
+                Storage::disk('public')->delete($club->documento_path);
+            }
+            $documentoPath = $request->file('documento')->store('clubes/documentos', 'public');
+            $club->documento_path = $documentoPath;
             $club->save();
         }
 

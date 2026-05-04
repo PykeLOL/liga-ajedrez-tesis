@@ -10,6 +10,7 @@ use App\Models\Deportista;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class DeportistaController extends Controller
@@ -81,6 +82,7 @@ class DeportistaController extends Controller
             'elo_internacional' => 'nullable|integer|min:0',
             'fide_id' => 'nullable|string|max:50|unique:deportistas,fide_id',
             'titulo_id' => 'nullable|numeric|exists:titulos,id',
+            'documento' => 'nullable|file|mimes:pdf|max:10000',
         ], [
             'usuario_id.unique' => 'El usuario seleccionado ya está asociado a un deportista.',
         ]);
@@ -112,6 +114,12 @@ class DeportistaController extends Controller
         $tituloId = $validated['titulo_id']
             ?? Titulo::where('abreviacion', 'ST')->value('id');
 
+        $documentoPath = null;
+        if ($request->hasFile('documento')) {
+            $documento = $request->file('documento');
+            $documentoPath = $documento->store('deportistas/documentos', 'public');
+        }
+
         $deportista = Deportista::create([
             'usuario_id' => $validated['usuario_id'],
             'club_id' => $validated['club_id'] ?? null,
@@ -123,6 +131,7 @@ class DeportistaController extends Controller
             'elo_internacional' => $validated['elo_internacional'] ?? 0,
             'fide_id' => $validated['fide_id'] ?? null,
             'titulo_id' => $tituloId,
+            'documento_path' => $documentoPath,
             'estado' => true,
         ]);
 
@@ -150,6 +159,7 @@ class DeportistaController extends Controller
             'elo_internacional' => 'nullable|integer|min:0',
             'fide_id' => 'nullable|string|max:50|unique:deportistas,fide_id,' . $id,
             'titulo_id' => 'nullable|numeric|exists:titulos,id',
+            'documento' => 'nullable|file|mimes:pdf|max:10000',
         ]);
 
         if ($validator->fails()) {
@@ -180,6 +190,15 @@ class DeportistaController extends Controller
             'fide_id' => $validated['fide_id'] ?? null,
             'titulo_id' => $tituloId,
         ]);
+
+        if ($request->hasFile('documento')) {
+            if ($deportista->documento_path) {
+                Storage::disk('public')->delete($deportista->documento_path);
+            }
+            $documento = $request->file('documento');
+            $documentoPath = $documento->store('deportistas/documentos', 'public');
+            $deportista->update(['documento_path' => $documentoPath]);
+        }
 
         return response()->json([
             'message' => 'Deportista actualizado correctamente',

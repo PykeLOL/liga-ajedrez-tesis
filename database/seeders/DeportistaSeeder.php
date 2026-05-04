@@ -14,7 +14,7 @@ class DeportistaSeeder extends Seeder
         $rolDeportistaId = DB::table('roles')->where('nombre', 'Deportista')->value('id');
         $usuarioDeportistaId = DB::table('usuarios')
             ->where('rol_id', $rolDeportistaId)
-            ->value('id');
+            ->get();
 
         $generoId = DB::table('generos')->where('nombre', 'Masculino')->value('id');
         $nacionalidadId = DB::table('nacionalidades')->where('nombre', 'Colombia')->value('id');
@@ -30,7 +30,7 @@ class DeportistaSeeder extends Seeder
             ->value('id');
 
         $this->crearDeportista(
-            $usuarioDeportistaId,
+            $usuarioDeportistaId[0]->id,
             144413246,
             $fechaNacimiento,
             $generoId,
@@ -40,7 +40,7 @@ class DeportistaSeeder extends Seeder
         );
 
         $this->crearDeportista(
-            5,
+            $usuarioDeportistaId[1]->id,
             1503014,
             $fechaNacimiento,
             $generoId,

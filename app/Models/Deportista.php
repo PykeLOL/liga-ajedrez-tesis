@@ -23,6 +23,7 @@ class Deportista extends Model
         'elo_internacional',
         'fide_id',
         'titulo_id',
+        'documento_path',
         'estado',
     ];
 

@@ -19,6 +19,7 @@ class CreateDeportistasTable extends Migration
             $table->integer('elo_internacional')->nullable();
             $table->string('fide_id')->nullable();
             $table->date('fecha_nacimiento');
+            $table->text('documento_path')->nullable();
             $table->boolean('estado')->default(true);
 
             $table->foreignId('usuario_id')->unique()->constrained('usuarios')->onDelete('cascade');

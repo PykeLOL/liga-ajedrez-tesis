@@ -21,7 +21,7 @@ class UsuarioSeeder extends Seeder
 
         $users = [
             [
-                'id' => 1,
+                // 'id' => 1,
                 'nombre' => 'admin',
                 'apellido' => 'admin',
                 'email' => 'admin@admin.com',
@@ -35,7 +35,7 @@ class UsuarioSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => 2,
+                // 'id' => 2,
                 'nombre' => 'Nelson',
                 'apellido' => 'Arango',
                 'email' => 'presidente@gmail.com',
@@ -49,7 +49,7 @@ class UsuarioSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => 3,
+                // 'id' => 3,
                 'nombre' => 'Brahian',
                 'apellido' => 'Pulido',
                 'email' => 'deportista@gmail.com',
@@ -63,7 +63,7 @@ class UsuarioSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => 4,
+                // 'id' => 4,
                 'nombre' => 'Juan',
                 'apellido' => 'Lopez',
                 'email' => 'entrenador@gmail.com',
@@ -77,7 +77,7 @@ class UsuarioSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => 5,
+                // 'id' => 5,
                 'nombre' => 'Carlsen',
                 'apellido' => 'Magnus',
                 'email' => 'carlsen.magnus@gmail.com',
@@ -91,7 +91,7 @@ class UsuarioSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'id' => 6,
+                // 'id' => 6,
                 'nombre' => 'Jose Gabriel',
                 'apellido' => 'Cardoso Cardoso',
                 'email' => 'jose.cardoso@gmail.com',
@@ -107,5 +107,11 @@ class UsuarioSeeder extends Seeder
         ];
 
         DB::table('usuarios')->insert($users);
+        DB::statement("
+            SELECT setval(
+                pg_get_serial_sequence('usuarios', 'id'),
+                (SELECT MAX(id) FROM usuarios)
+            )
+        ");
     }
 }

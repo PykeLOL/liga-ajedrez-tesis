@@ -23,8 +23,8 @@ class CreateClubesTable extends Migration
             $table->text('url_mapa')->nullable();
             $table->unsignedBigInteger('presidente_id')->nullable();
             $table->text('contacto')->nullable();
-            $table->string('logo')->nullable();
-            $table->string('documento_path')->nullable();
+            $table->text('logo')->nullable();
+            $table->text('documento_path')->nullable();
             $table->unsignedBigInteger('estado_id')->nullable();
             $table->timestamps();
 

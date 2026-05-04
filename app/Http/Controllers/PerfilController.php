@@ -12,7 +12,7 @@ class PerfilController extends Controller
 {
     public function index()
     {
-        $user = auth()->user()->load('rol', 'permisos');
+        $user = auth()->user()->load('rol', 'permisos', 'solicitudes');
         return response()->json($user);
     }
 
@@ -49,14 +49,14 @@ class PerfilController extends Controller
             $image = str_replace(' ', '+', $image);
 
             $imageName = 'usuarios/' . uniqid() . '.png';
-            \Storage::disk('public')->put($imageName, base64_decode($image));
+            Storage::disk('public')->put($imageName, base64_decode($image));
 
             $usuario->imagen_path = $imageName;
         }
         $usuario->update([
             'nombre' => $validated['nombre'] ?? $usuario->nombre,
             'apellido' => $validated['apellido'] ?? $usuario->apellido,
-            'documento' => $validated['documento'] ?? $usuario->documento,
+            'numero_identificacion' => $validated['documento'] ?? $usuario->numero_identificacion,
             'email' => $validated['email'] ?? $usuario->email,
             'telefono' => $validated['telefono'] ?? $usuario->telefono,
             'rol_id' => $validated['rol_id'] ?? $usuario->rol_id,

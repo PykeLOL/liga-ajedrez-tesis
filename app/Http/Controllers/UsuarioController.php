@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rol;
 use App\Models\Usuario;
 use App\Models\Permiso;
 use Illuminate\Http\Request;
@@ -53,7 +54,6 @@ class UsuarioController extends Controller
             'telefono' => 'nullable|string|max:50',
             'contraseña' => 'required|string|min:5|same:confirmar_contraseña',
             'confirmar_contraseña' => 'required|string|min:5',
-            'rol_id' => 'nullable|integer|exists:roles,id',
             'imagen' => 'nullable|image|max:2048',
         ], [
             'email.unique' => 'El correo electrónico ya está registrado.',
@@ -77,6 +77,8 @@ class UsuarioController extends Controller
             $path = $request->file('imagen')->store('usuarios', 'public');
         }
 
+        $rol = Rol::where('nombre', 'Deportista')->first();
+
         $usuario = Usuario::create([
             'nombre' => $validated['nombre'],
             'apellido' => $validated['apellido'],
@@ -85,7 +87,7 @@ class UsuarioController extends Controller
             'email' => $validated['email'],
             'telefono' => $validated['telefono'] ?? null,
             'contraseña' => Hash::make($validated['contraseña']),
-            'rol_id' => $validated['rol_id'] ?? null,
+            'rol_id' => $rol ? $rol->id : null,
             'estado' => true,
             'imagen_path' => $path,
         ]);
@@ -130,7 +132,7 @@ class UsuarioController extends Controller
             $image = str_replace(' ', '+', $image);
 
             $imageName = 'usuarios/' . uniqid() . '.png';
-            \Storage::disk('public')->put($imageName, base64_decode($image));
+            Storage::disk('public')->put($imageName, base64_decode($image));
         }
 
         $usuario = Usuario::create([
@@ -196,7 +198,7 @@ class UsuarioController extends Controller
                 $image = str_replace(' ', '+', $image);
 
                 $imageName = 'usuarios/' . uniqid() . '.png';
-                \Storage::disk('public')->put($imageName, base64_decode($image));
+                Storage::disk('public')->put($imageName, base64_decode($image));
 
                 $usuario->imagen_path = $imageName;
             }
