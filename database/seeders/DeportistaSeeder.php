@@ -28,7 +28,69 @@ class DeportistaSeeder extends Seeder
             ->value('id');
         $tituloId = DB::table('titulos')->where('abreviacion', 'ST')->value('id');
 
+<<<<<<< Updated upstream
         $deportistas = [
+=======
+        $this->crearDeportista(
+            $usuarioDeportistaId[0]->id,
+            144413246,
+            $fechaNacimiento,
+            $generoId,
+            $nacionalidadId,
+            $clubId,
+            $categoriaId
+        );
+
+        $this->crearDeportista(
+            $usuarioDeportistaId[1]->id,
+            1503014,
+            $fechaNacimiento,
+            $generoId,
+            $nacionalidadId,
+            $clubId,
+            $categoriaId
+        );
+    }
+
+    private function crearDeportista(
+        $usuarioId,
+        $fideId,
+        $fechaNacimiento,
+        $generoId,
+        $nacionalidadId,
+        $clubId,
+        $categoriaId
+    ) {
+
+        // $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
+        // $response = Http::get($url);
+
+        // if (!$response->successful()) {
+        //     return;
+        // }
+
+        // $data = $response->json();
+
+        // $history = $data['history'][0] ?? [];
+
+        // $classical = $history['classical_rating'] ?? 0;
+        // $rapid = $history['rapid_rating'] ?? 0;
+        // $blitz = $history['blitz_rating'] ?? 0;
+
+        $classical = 0;
+        $rapid = 0;
+        $blitz = 0;
+
+        $eloMasAlto = max($classical, $rapid, $blitz);
+
+        $tituloId = DB::table('titulos')
+            ->where('nombre_fide', $data['fide_title'] ?? null)
+            ->value('id')
+            ?? DB::table('titulos')->where('abreviacion', 'ST')->value('id');
+
+        DB::table('deportistas')->updateOrInsert(
+            ['usuario_id' => $usuarioId],
+>>>>>>> Stashed changes
             [
                 'usuario_id' => $usuarioDeportistaId,
                 'club_id' => $clubId,
