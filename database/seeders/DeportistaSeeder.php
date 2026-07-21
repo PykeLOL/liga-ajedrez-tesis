@@ -60,20 +60,24 @@ class DeportistaSeeder extends Seeder
         $categoriaId
     ) {
 
-        $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
-        $response = Http::get($url);
+        // $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
+        // $response = Http::get($url);
 
-        if (!$response->successful()) {
-            return;
-        }
+        // if (!$response->successful()) {
+        //     return;
+        // }
 
-        $data = $response->json();
+        // $data = $response->json();
 
-        $history = $data['history'][0] ?? [];
+        // $history = $data['history'][0] ?? [];
 
-        $classical = $history['classical_rating'] ?? 0;
-        $rapid = $history['rapid_rating'] ?? 0;
-        $blitz = $history['blitz_rating'] ?? 0;
+        // $classical = $history['classical_rating'] ?? 0;
+        // $rapid = $history['rapid_rating'] ?? 0;
+        // $blitz = $history['blitz_rating'] ?? 0;
+
+        $classical = 0;
+        $rapid = 0;
+        $blitz = 0;
 
         $eloMasAlto = max($classical, $rapid, $blitz);
 
