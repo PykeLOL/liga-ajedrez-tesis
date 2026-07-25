@@ -5,22 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EvaluacionEntrenamiento extends Model
+class PlanEntrenamientoDeportista extends Model
 {
     use HasFactory;
 
-    protected $table = 'evaluaciones_entrenamiento';
+    protected $table = 'planes_entrenamiento_deportistas';
 
     protected $fillable = [
-        'entrenamiento_id', 'deportista_id',
-        'calificacion', 'comentarios'
+        'plan_entrenamiento_id',
+        'deportista_id',
+        'estado'
     ];
 
     public $timestamps = true;
 
-    public function entrenamiento()
+    public function planEntrenamiento()
     {
-        return $this->belongsTo(Entrenamiento::class);
+        return $this->belongsTo(PlanEntrenamiento::class, 'plan_entrenamiento_id');
     }
 
     public function deportista()

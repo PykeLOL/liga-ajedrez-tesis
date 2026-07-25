@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateEvaluacionesEntrenadorTable extends Migration
+class CreateEntrenamientoAsistenciasTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,13 @@ class CreateEvaluacionesEntrenadorTable extends Migration
      */
     public function up()
     {
-        Schema::create('evaluaciones_entrenador', function (Blueprint $table) {
+        Schema::create('entrenamiento_asistencias', function (Blueprint $table) {
             $table->id();
             $table->foreignId('entrenamiento_id')->constrained('entrenamientos')->cascadeOnDelete();
             $table->foreignId('deportista_id')->constrained('deportistas')->cascadeOnDelete();
-            $table->foreignId('entrenador_id')->constrained('entrenadores')->cascadeOnDelete();
-            $table->integer('rendimiento'); // 1–5
-            $table->text('comentarios')->nullable();
+            $table->foreignId('estado_asistencia_id')->constrained('estados_asistencia');
+            $table->time('hora_llegada')->nullable();
+            $table->text('observaciones')->nullable();
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ class CreateEvaluacionesEntrenadorTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('evaluaciones_entrenador');
+        Schema::dropIfExists('entrenamiento_asistencias');
     }
 }

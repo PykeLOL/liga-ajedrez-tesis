@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\EstadoInscripcion;
+use App\Models\EstadoAsistencia;
 
-class EstadoInscripcionSeeder extends Seeder
+class EstadoAsistenciaSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -16,13 +16,13 @@ class EstadoInscripcionSeeder extends Seeder
     {
         $estados = [
             ['id' => 1, 'nombre' => 'Pendiente'],
-            ['id' => 2, 'nombre' => 'Pagado'],
-            ['id' => 3, 'nombre' => 'Rechazado'],
-            ['id' => 4, 'nombre' => 'Cancelado'],
+            ['id' => 2, 'nombre' => 'Asistió'],
+            ['id' => 3, 'nombre' => 'No Asistió'],
+            ['id' => 4, 'nombre' => 'Excusado'],
         ];
 
         foreach ($estados as $estado) {
-            EstadoInscripcion::firstOrCreate(['nombre' => $estado['nombre']], $estado);
+            EstadoAsistencia::firstOrCreate(['nombre' => $estado['nombre']], $estado);
         }
     }
 }

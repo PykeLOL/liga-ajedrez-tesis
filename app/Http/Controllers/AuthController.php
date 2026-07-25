@@ -116,6 +116,7 @@ class AuthController extends Controller
                     'nombre' => $user->nombre ?? $user->name,
                     'email'  => $user->email,
                     'rol'    => $user->rol ? $user->rol->nombre : 'Sin rol',
+                    'imagen_path' => $user->imagen_path,
                     'google_id' => $user->google_id,
                     // 'google_email' => $user->google_email,
                 ],

@@ -22,6 +22,8 @@ use App\Http\Controllers\ChesstoolsController;
 use App\Http\Controllers\EntrenadorController;
 use App\Http\Controllers\EntrenamientoController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\EntrenamientoHomeController;
+use App\Http\Controllers\PlanEntrenamientoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,8 +37,7 @@ use App\Http\Controllers\GoogleCalendarController;
 */
 
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/refresh', [AuthController::class, 'refresh'])
-    ->middleware('jwt.cookie');
+Route::middleware('jwt.cookie')->post('/refresh', [AuthController::class, 'refresh']);
 Route::middleware(['jwt.cookie'])->get('/me', [AuthController::class, 'me']);
 Route::post('/usuarios', [UsuarioController::class, 'store']);
 
@@ -57,6 +58,15 @@ Route::prefix('select')->group(function () {
     Route::get('/usuarios-deportistas', [SelectController::class, 'usuariosDeportistas']);
     Route::get('/nacionalidades', [SelectController::class, 'nacionalidades']);
     Route::get('/titulos', [SelectController::class, 'titulos']);
+    Route::get('/tipos-accion', [SelectController::class, 'tiposAccion']);
+    Route::get('/modulos', [SelectController::class, 'modulos']);
+    Route::get('/categorias', [SelectController::class, 'categorias']);
+    Route::get('/tipos-entrenamiento', [SelectController::class, 'tiposEntrenamiento']);
+    Route::get('/deportistas', [SelectController::class, 'deportistas']);
+
+    Route::get('/planes-entrenamiento', [SelectController::class, 'planesEntrenamiento']);
+    Route::get('/entrenadores', [SelectController::class, 'entrenadores']);
+    Route::get('/eventos', [SelectController::class, 'eventos']);
 });
 
 Route::prefix('home')->group(function () {
@@ -102,6 +112,13 @@ Route::prefix('home')->group(function () {
             Route::post('/club', [SolicitudController::class, 'storeClub']);
             Route::post('/deportista', [SolicitudController::class, 'storeDeportista']);
         });
+
+        Route::prefix('entrenamientos')->group(function () {
+            Route::get('/{clubId}', [EntrenamientoHomeController::class, 'index']);
+            Route::get('/mis-entrenamientos', [EntrenamientoHomeController::class, 'misEntrenamientos']);
+            Route::post('/{id}/google', [EntrenamientoHomeController::class, 'syncToGoogle']);
+            Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
+        });
     });
 });
 
@@ -113,6 +130,7 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/permisos', [PerfilController::class, 'misPermisos']);
         Route::put('/cambiar-contrasena', [PerfilController::class, 'cambiarContrasena']);
         Route::put('/', [PerfilController::class, 'update']);
+        Route::put('/admin', [PerfilController::class, 'updateAdmin'])->middleware('permiso:editar-usuarios');
         Route::delete('/eliminar-foto', [PerfilController::class, 'eliminarFoto']);
     });
 
@@ -207,14 +225,6 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::delete('/{id}', [EntrenadorController::class, 'destroy'])->middleware('permiso:eliminar-entrenadores');
     });
 
-    Route::prefix('entrenamientos')->group(function () {
-        Route::get('/', [EntrenamientoController::class, 'index']);
-        Route::get('/mis-entrenamientos', [EntrenamientoController::class, 'misEntrenamientos']);
-
-        Route::post('/{id}/google', [EntrenamientoController::class, 'syncToGoogle']);
-        Route::get('/google/authorize', [GoogleCalendarController::class, 'redirectToGoogle']);
-    });
-
     Route::prefix('eventos')->group(function () {
         Route::get('/', [EventoController::class, 'index'])->middleware('permiso:ver-eventos');
         Route::post('/', [EventoController::class, 'store'])->middleware('permiso:crear-eventos');
@@ -243,6 +253,26 @@ Route::middleware(['auth:api', 'throttle:1000,1'])->group(function () {
         Route::get('/', [SolicitudController::class, 'index'])->middleware('permiso:ver-solicitudes');
         Route::get('/{id}', [SolicitudController::class, 'show'])->middleware('permiso:editar-solicitudes');
         Route::put('/{id}', [SolicitudController::class, 'actualizarEstado'])->middleware('permiso:editar-solicitudes');
+    });
+
+    Route::prefix('planes-entrenamiento')->group(function () {
+        Route::get('/', [PlanEntrenamientoController::class, 'index'])->middleware('permiso:ver-planes-entrenamiento');
+        Route::post('/', [PlanEntrenamientoController::class, 'store'])->middleware('permiso:crear-planes-entrenamiento');
+        Route::get('/{id}', [PlanEntrenamientoController::class, 'show'])->middleware('permiso:editar-planes-entrenamiento');
+        Route::put('/{id}', [PlanEntrenamientoController::class, 'update'])->middleware('permiso:editar-planes-entrenamiento');
+        Route::delete('/{id}', [PlanEntrenamientoController::class, 'destroy'])->middleware('permiso:eliminar-planes-entrenamiento');
+
+        Route::get('/{id}/resumen', [PlanEntrenamientoController::class, 'resumen'])->middleware('permiso:editar-planes-entrenamiento');
+    });
+
+    Route::prefix('entrenamientos')->group(function () {
+        Route::get('/', [EntrenamientoController::class, 'index'])->middleware('permiso:ver-entrenamientos');
+        Route::post('/', [EntrenamientoController::class, 'store'])->middleware('permiso:crear-entrenamientos');
+        Route::get('/{id}', [EntrenamientoController::class, 'show'])->middleware('permiso:editar-entrenamientos');
+        Route::get('/{id}/asistencias', [EntrenamientoController::class, 'showAsistencias'])->middleware('permiso:editar-entrenamientos');
+        Route::put('/{id}', [EntrenamientoController::class, 'update'])->middleware('permiso:editar-entrenamientos');
+        Route::delete('/{id}', [EntrenamientoController::class, 'destroy'])->middleware('permiso:eliminar-entrenamientos');
+
     });
 });
 

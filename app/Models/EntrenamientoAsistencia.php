@@ -5,15 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EvaluacionEntrenador extends Model
+class EntrenamientoAsistencia extends Model
 {
     use HasFactory;
 
-    protected $table = 'evaluaciones_entrenador';
+    protected $table = 'entrenamiento_asistencias';
 
     protected $fillable = [
-        'entrenamiento_id', 'deportista_id',
-        'entrenador_id', 'rendimiento', 'comentarios'
+        'entrenamiento_id',
+        'deportista_id',
+        'estado_asistencia_id',
+        'hora_llegada',
+        'observaciones',
     ];
 
     public $timestamps = true;
@@ -28,8 +31,8 @@ class EvaluacionEntrenador extends Model
         return $this->belongsTo(Deportista::class);
     }
 
-    public function entrenador()
+    public function estado()
     {
-        return $this->belongsTo(Entrenador::class);
+        return $this->belongsTo(EstadoAsistencia::class, 'estado_asistencia_id');
     }
 }

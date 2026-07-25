@@ -20,7 +20,7 @@ class PlanEntrenamientoHorario extends Model
 
     public $timestamps = true;
 
-    public function plan()
+    public function planEntrenamiento()
     {
         return $this->belongsTo(PlanEntrenamiento::class, 'plan_entrenamiento_id');
     }

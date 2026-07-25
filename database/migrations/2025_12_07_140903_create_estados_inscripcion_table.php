@@ -16,7 +16,6 @@ class CreateEstadosInscripcionTable extends Migration
         Schema::create('estados_inscripcion', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
-            $table->timestamps();
         });
     }
 

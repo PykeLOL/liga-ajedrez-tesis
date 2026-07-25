@@ -87,6 +87,11 @@ class Usuario extends Authenticatable implements JWTSubject
         return $rolePermissions->merge($userPermissions)->unique('id');
     }
 
+    public function getNombreCompletoAttribute()
+    {
+        return trim($this->nombre . ' ' . $this->apellido);
+    }
+
     public function tipoIdentificacion()
     {
         return $this->belongsTo(TipoIdentificacion::class, 'tipo_identificacion_id');

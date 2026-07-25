@@ -13,7 +13,7 @@ class EstadoEvento extends Model
 
     protected $fillable = ['nombre'];
 
-    public $timestamps = true;
+    public $timestamps = false;
 
     public function eventos()
     {

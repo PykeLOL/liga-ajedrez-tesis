@@ -2,148 +2,245 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use App\Models\Deportista;
 use App\Models\Entrenamiento;
-use Google\Client as GoogleClient;
-use Google\Service\Calendar;
-use Google\Service\Calendar\Event;
+use App\Models\EstadoAsistencia;
+use App\Models\PlanEntrenamiento;
+use Illuminate\Support\Facades\DB;
+use App\Models\EstadoEntrenamiento;
+use App\Http\Resources\Entrenamiento\EntrenamientoResource;
+use App\Http\Requests\Entrenamiento\StoreEntrenamientoRequest;
+use App\Http\Requests\Entrenamiento\UpdateEntrenamientoRequest;
+use App\Http\Resources\Entrenamiento\EntrenamientoIndexResource;
 
 class EntrenamientoController extends Controller
 {
     public function index()
     {
-        $entrenamientos = Entrenamiento::with('club', 'categoria', 'genero', 'entrenador', 'deportistas', 'deportistas.usuario', 'deportistas.titulo')->get();
-        $entrenamientos = $entrenamientos->map(function ($entrenamiento) {
-            return [
-                'id' => $entrenamiento->id,
-                'club' => $entrenamiento->club->nombre,
-                'categoria' => $entrenamiento->categoria->nombre,
-                'genero' => $entrenamiento->genero->nombre,
-                'entrenador' => $entrenamiento->entrenador->usuario->nombre . ' ' . $entrenamiento->entrenador->usuario->apellido,
-                'fecha' => $entrenamiento->fecha,
-                'hora_inicio' => $entrenamiento->hora_inicio,
-                'hora_fin' => $entrenamiento->hora_fin,
-                'ubicacion' => $entrenamiento->ubicacion,
-                'url_mapa' => $entrenamiento->url_mapa,
-                'tipo_entrenamiento' => $entrenamiento->tipo->nombre,
-                'deportistas' => $entrenamiento->deportistas->map(function ($deportista) {
-                    return [
-                        'id' => $deportista->id,
-                        'nombre' => $deportista->usuario->nombre,
-                        'apellido' => $deportista->usuario->apellido,
-                        'numero_identificacion' => $deportista->usuario->numero_identificacion,
-                        'titulo' => $deportista->titulo->abreviacion,
-                    ];
-                }),
-            ];
-        });
+        $entrenamientos = Entrenamiento::with([
+            'planEntrenamiento',
+            'club',
+            'categoria',
+            'genero',
+            'tipo',
+            'estado',
+            'evento',
+            'entrenador.usuario',
+            'deportistas.usuario',
+            'deportistas.titulo',
+        ])->get();
 
-        return response()->json($entrenamientos);
+        return EntrenamientoIndexResource::collection($entrenamientos);
     }
 
-    public function misEntrenamientos()
+    public function show(int $id)
     {
-        $user = auth()->user();
-        dd($user->deportista->entrenamientos);
-        $entrenamientos = Entrenamiento::with('club', 'categoria', 'genero', 'entrenador', 'deportistas', 'deportistas.usuario', 'deportistas.titulo')->get();
-        $entrenamientos = $entrenamientos->map(function ($entrenamiento) {
-            return [
-                'id' => $entrenamiento->id,
-                'club' => $entrenamiento->club->nombre,
-                'categoria' => $entrenamiento->categoria->nombre,
-                'genero' => $entrenamiento->genero->nombre,
-                'entrenador' => $entrenamiento->entrenador->usuario->nombre . ' ' . $entrenamiento->entrenador->usuario->apellido,
-                'fecha' => $entrenamiento->fecha,
-                'hora_inicio' => $entrenamiento->hora_inicio,
-                'hora_fin' => $entrenamiento->hora_fin,
-                'ubicacion' => $entrenamiento->ubicacion,
-                'url_mapa' => $entrenamiento->url_mapa,
-                'tipo_entrenamiento' => $entrenamiento->tipo->nombre,
-                'deportistas' => $entrenamiento->deportistas->map(function ($deportista) {
-                    return [
-                        'id' => $deportista->id,
-                        'nombre' => $deportista->usuario->nombre,
-                        'apellido' => $deportista->usuario->apellido,
-                        'numero_identificacion' => $deportista->usuario->numero_identificacion,
-                        'titulo' => $deportista->titulo->abreviacion,
-                    ];
-                }),
-            ];
-        });
+        $entrenamiento = Entrenamiento::with([
+            'planEntrenamiento',
+            'club',
+            'categoria',
+            'genero',
+            'tipo',
+            'estado',
+            'evento',
+            'evento.tipoEvento',
+            'entrenador.usuario',
+            'deportistas.usuario',
+            'deportistas.titulo',
+            'deportistas.categoria',
+        ])->find($id);
 
-        return response()->json($entrenamientos);
+        if (!$entrenamiento) {
+            return response()->json([
+                'message' => 'Entrenamiento no encontrado.'
+            ], 404);
+        }
+
+        return new EntrenamientoResource($entrenamiento);
     }
 
-    public function syncToGoogle($entrenamientoId)
+    public function showAsistencias(int $id)
     {
-        $entrenamiento = Entrenamiento::findOrFail($entrenamientoId);
-        $user = auth()->user();
+        $entrenamiento = Entrenamiento::with([
+            'estado',
+            'deportistas.usuario',
+            'deportistas.titulo',
+            'deportistas.categoria',
+        ])->find($id);
 
-        $client = new GoogleClient();
-        $client->setClientId(env('GOOGLE_CLIENT_ID'));
-        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-        $client->setAccessType('offline');
-        $client->setPrompt('consent');
-
-        if (!$user->google_token) {
+        if (!$entrenamiento) {
             return response()->json([
-                'error' => 'El usuario no tiene Google conectado'
-            ], 401);
+                'message' => 'Entrenamiento no encontrado.'
+            ], 404);
         }
 
-        if (!$user->google_token_exp || now()->greaterThan($user->google_token_exp)) {
-            $client->refreshToken($user->google_refresh);
-            $newToken = $client->getAccessToken();
+        return new EntrenamientoResource($entrenamiento);
+    }
 
-            $user->google_token = $newToken['access_token'];
-            $user->google_token_exp = now()->addSeconds($newToken['expires_in']);
-            $user->save();
-        }
+    public function store(StoreEntrenamientoRequest $request)
+    {
+        $entrenamiento = DB::transaction(function () use ($request) {
+            $data = $request->validated();
 
-        $client->setAccessToken($user->google_token);
+            $plan = null;
 
-        $service = new Calendar($client);
+            if (!empty($data['plan_entrenamiento_id'])) {
+                $plan = $this->completarDatosDesdePlan($data);
+            }
 
-        if (!$entrenamiento->hora_inicio || !$entrenamiento->hora_fin) {
-            return response()->json([
-                'error' => 'El entrenamiento no tiene horas definidas'
-            ], 422);
-        }
+            $data['estado_entrenamiento_id'] = $this->obtenerEstadoProgramado();
 
-        $start = Carbon::parse($entrenamiento->fecha.' '.$entrenamiento->hora_inicio, 'America/Bogota');
-        $end   = Carbon::parse($entrenamiento->fecha.' '.$entrenamiento->hora_fin, 'America/Bogota');
+            $entrenamiento = Entrenamiento::create($data);
 
-        if ($end->lessThanOrEqualTo($start)) {
-            return response()->json([
-                'error' => 'La hora de fin debe ser mayor a la de inicio'
-            ], 422);
-        }
+            if ($plan) {
+                $this->crearAsistenciasDeportista($plan->deportistas, $entrenamiento);
+            } else {
+                $this->crearAsistenciasDeportista($data['deportistas'] ?? [], $entrenamiento);
+            }
 
-        $event = new Event([
-            'summary' => 'Entrenamiento - '.$entrenamiento->tipo->nombre,
-            'location' => $entrenamiento->coordenadas ?? $entrenamiento->ubicacion,
-            'description' => $entrenamiento->descripcion,
-            'start' => [
-                'dateTime' => $start->toRfc3339String(),
-                'timeZone' => 'America/Bogota',
-            ],
-            'end' => [
-                'dateTime' => $end->toRfc3339String(),
-                'timeZone' => 'America/Bogota',
-            ],
+            return $entrenamiento;
+        });
+
+        $entrenamiento->load([
+            'planEntrenamiento',
+            'club',
+            'categoria',
+            'genero',
+            'tipo',
+            'estado',
+            'evento',
+            'entrenador.usuario',
+            'deportistas.usuario',
+            'deportistas.titulo',
         ]);
-
-        if ($entrenamiento->google_event_id) {
-            $service->events->update('primary', $entrenamiento->google_event_id, $event);
-        } else {
-            $created = $service->events->insert('primary', $event);
-            $entrenamiento->google_event_id = $created->id;
-            $entrenamiento->save();
-        }
 
         return response()->json([
-            'message' => 'Entrenamiento sincronizado con Google Calendar'
+            'message' => 'Entrenamiento creado correctamente.',
+            'entrenamiento' => new EntrenamientoResource($entrenamiento),
+        ], 201);
+    }
+
+    public function update(UpdateEntrenamientoRequest $request, int $id)
+    {
+        $entrenamiento = Entrenamiento::find($id);
+        if (!$entrenamiento) {
+            return response()->json([
+                'message' => 'Entrenamiento no encontrado.'
+            ], 404);
+        }
+
+        DB::transaction(function () use ($request, $entrenamiento) {
+            $data = $request->validated();
+            $entrenamiento->update($data);
+
+            $this->crearAsistenciasDeportista(
+                $data['deportistas'] ?? [],
+                $entrenamiento
+            );
+        });
+
+        $entrenamiento->load([
+            'planEntrenamiento',
+            'club',
+            'categoria',
+            'genero',
+            'tipo',
+            'estado',
+            'evento',
+            'entrenador.usuario',
+            'deportistas.usuario',
+            'deportistas.titulo',
         ]);
+
+        return response()->json([
+            'message' => 'Entrenamiento actualizado correctamente.',
+            'entrenamiento' => new EntrenamientoResource($entrenamiento),
+        ]);
+    }
+
+    public function destroy(int $id)
+    {
+        $entrenamiento = Entrenamiento::find($id);
+
+        if (!$entrenamiento) {
+            return response()->json([
+                'message' => 'Entrenamiento no encontrado.'
+            ], 404);
+        }
+
+        $entrenamiento->delete();
+
+        return response()->json([
+            'message' => 'Entrenamiento eliminado correctamente.'
+        ]);
+    }
+
+    private function completarDatosDesdePlan(array &$data): PlanEntrenamiento
+    {
+        $plan = PlanEntrenamiento::with([
+            'deportistas' => function ($query) {
+                $query->wherePivot('estado', true);
+            }
+        ])->findOrFail($data['plan_entrenamiento_id']);
+
+        $data['club_id'] = $plan->club_id;
+        $data['categoria_id'] = $plan->categoria_id;
+        $data['genero_id'] = $plan->genero_id;
+        $data['entrenador_id'] = $plan->entrenador_id;
+        $data['tipo_entrenamiento_id'] = $plan->tipo_entrenamiento_id;
+        $data['evento_id'] = $plan->evento_id;
+        $data['nombre'] = $plan->nombre;
+        $data['descripcion'] = $plan->descripcion;
+        $data['ubicacion'] = $plan->ubicacion;
+        $data['url_mapa'] = $plan->url_mapa;
+
+        return $plan;
+    }
+
+    private function obtenerEstadoProgramado(): int
+    {
+        return EstadoEntrenamiento::where(
+            'nombre',
+            EstadoEntrenamiento::PROGRAMADO
+        )->firstOrFail()->id;
+    }
+
+    private function crearAsistenciasDeportista(iterable $deportistas, Entrenamiento $entrenamiento): void
+    {
+        $estadoPendiente = EstadoAsistencia::where('nombre', EstadoAsistencia::PENDIENTE)->value('id');
+        $actuales = $entrenamiento->deportistas()
+            ->withPivot([
+                'estado_asistencia_id',
+                'hora_llegada',
+                'observaciones',
+            ])
+            ->get()
+            ->keyBy('id');
+
+        $data = [];
+
+        foreach ($deportistas as $deportista) {
+            $deportistaId = $deportista instanceof Deportista
+                ? $deportista->id
+                : $deportista;
+
+            if ($actuales->has($deportistaId)) {
+                $pivot = $actuales[$deportistaId]->pivot;
+
+                $data[$deportistaId] = [
+                    'estado_asistencia_id' => $pivot->estado_asistencia_id,
+                    'hora_llegada' => $pivot->hora_llegada,
+                    'observaciones' => $pivot->observaciones,
+                ];
+            } else {
+                $data[$deportistaId] = [
+                    'estado_asistencia_id' => $estadoPendiente,
+                    'hora_llegada' => null,
+                    'observaciones' => null,
+                ];
+            }
+        }
+
+        $entrenamiento->deportistas()->sync($data);
     }
 }

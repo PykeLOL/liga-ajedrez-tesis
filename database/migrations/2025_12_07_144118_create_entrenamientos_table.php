@@ -15,6 +15,9 @@ class CreateEntrenamientosTable extends Migration
     {
         Schema::create('entrenamientos', function (Blueprint $table) {
             $table->id();
+            $table->string('nombre');
+            $table->text('descripcion')->nullable();
+            $table->text('observaciones')->nullable();
             $table->foreignId('plan_entrenamiento_id')->nullable()->constrained('planes_entrenamiento')->nullOnDelete();
             $table->foreignId('club_id')->constrained('clubes')->cascadeOnDelete();
             $table->foreignId('categoria_id')->constrained('categorias')->cascadeOnDelete();
@@ -23,13 +26,26 @@ class CreateEntrenamientosTable extends Migration
             $table->date('fecha');
             $table->time('hora_inicio');
             $table->time('hora_fin');
-            $table->text('ubicacion')->nullable();
-            $table->text('url_mapa')->nullable();
-            $table->text('coordenadas')->nullable();
-            $table->foreignId('tipo_entrenamiento_id')->constrained('tipos_entrenamiento')->cascadeOnDelete();
+            $table->string('ubicacion')->nullable();
+            $table->string('url_mapa')->nullable();
+            $table->foreignId('tipo_entrenamiento_id')->nullable()->constrained('tipos_entrenamiento')->cascadeOnDelete();
             $table->foreignId('evento_id')->nullable()->constrained('eventos')->nullOnDelete();
-            $table->text('descripcion')->nullable();
-            $table->text('google_event_id')->nullable();
+            $table->foreignId('estado_entrenamiento_id')->constrained('estados_entrenamiento');
+            $table->boolean('generado_automaticamente')->default(false);
+            $table->string('google_event_id')->nullable();
+
+            $table->unique([
+                'plan_entrenamiento_id',
+                'fecha',
+                'hora_inicio',
+                'hora_fin'
+            ]);
+
+            $table->index([
+                'plan_entrenamiento_id',
+                'fecha'
+            ]);
+
             $table->timestamps();
         });
     }

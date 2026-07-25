@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateAperturasTable extends Migration
+class CreateEstadosEntrenamientoTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,9 @@ class CreateAperturasTable extends Migration
      */
     public function up()
     {
-        Schema::create('aperturas', function (Blueprint $table) {
+        Schema::create('estados_entrenamiento', function (Blueprint $table) {
             $table->id();
-            $table->string('eco')->unique();
             $table->string('nombre');
-            $table->timestamps();
         });
     }
 
@@ -28,6 +26,6 @@ class CreateAperturasTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('aperturas');
+        Schema::dropIfExists('estados_entrenamiento');
     }
 }

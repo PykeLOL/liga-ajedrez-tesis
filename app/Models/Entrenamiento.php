@@ -12,16 +12,33 @@ class Entrenamiento extends Model
     protected $table = 'entrenamientos';
 
     protected $fillable = [
-        'plan_entrenamiento_id', 'club_id', 'categoria_id',
-        'genero_id', 'entrenador_id', 'fecha',
-        'hora_inicio', 'hora_fin', 'ubicacion',
-        'url_mapa', 'tipo_entrenamiento_id',
-        'evento_id', 'descripcion', 'google_event_id'
+        'nombre',
+        'descripcion',
+        'observaciones',
+        'plan_entrenamiento_id',
+        'club_id',
+        'categoria_id',
+        'genero_id',
+        'entrenador_id',
+        'fecha',
+        'hora_inicio',
+        'hora_fin',
+        'ubicacion',
+        'url_mapa',
+        'tipo_entrenamiento_id',
+        'evento_id',
+        'estado_entrenamiento_id',
+        'generado_automaticamente',
+        'google_event_id',
+    ];
+
+    protected $casts = [
+        'generado_automaticamente' => 'boolean',
     ];
 
     public $timestamps = true;
 
-    public function plan()
+    public function planEntrenamiento()
     {
         return $this->belongsTo(PlanEntrenamiento::class, 'plan_entrenamiento_id');
     }
@@ -56,25 +73,23 @@ class Entrenamiento extends Model
         return $this->belongsTo(Evento::class);
     }
 
-    public function asistencia()
+    public function asistencias()
     {
-        return $this->hasMany(EntrenamientoDeportista::class);
-    }
-
-    public function evaluacionesDeportistas()
-    {
-        return $this->hasMany(EvaluacionEntrenamiento::class);
-    }
-
-    public function evaluacionesEntrenador()
-    {
-        return $this->hasMany(EvaluacionEntrenador::class);
+        return $this->hasMany(EntrenamientoAsistencia::class);
     }
 
     public function deportistas()
     {
-        return $this->belongsToMany(Deportista::class, 'entrenamiento_deportista')
-                    ->withPivot('asistio', 'observaciones', 'hora_llegada')
-                    ->withTimestamps();
+        return $this->belongsToMany(Deportista::class, 'entrenamiento_asistencias', 'entrenamiento_id', 'deportista_id')
+                    ->withPivot([
+                        'estado_asistencia_id',
+                        'hora_llegada',
+                        'observaciones',
+                    ])->withTimestamps();
+    }
+
+    public function estado()
+    {
+        return $this->belongsTo(EstadoEntrenamiento::class, 'estado_entrenamiento_id');
     }
 }

@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Estado;
+use App\Models\EstadoPlan;
 use Illuminate\Database\Seeder;
 
-class EstadoSeeder extends Seeder
+class EstadoPlanSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -16,13 +16,13 @@ class EstadoSeeder extends Seeder
     {
         $estados = [
             ['id' => 1, 'nombre' => 'Activo'],
-            ['id' => 2, 'nombre' => 'Inactivo'],
-            ['id' => 3, 'nombre' => 'Pendiente'],
-            ['id' => 4, 'nombre' => 'Rechazado'],
+            ['id' => 2, 'nombre' => 'Borrador'],
+            ['id' => 3, 'nombre' => 'Finalizado'],
+            ['id' => 4, 'nombre' => 'Cancelado'],
         ];
 
         foreach ($estados as $estado) {
-            Estado::firstOrCreate(['nombre' => $estado['nombre']], $estado);
+            EstadoPlan::firstOrCreate(['nombre' => $estado['nombre']], $estado);
         }
     }
 }

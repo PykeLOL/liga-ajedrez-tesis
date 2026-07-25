@@ -73,14 +73,14 @@ class Deportista extends Model
         return $this->hasMany(EloHistorico::class);
     }
 
-    public function estadisticas()
+    public function estadistica()
     {
-        return $this->hasOne(EstadisticasDeportista::class);
+        return $this->hasOne(EstadisticaDeportista::class);
     }
 
     public function entrenamientos()
     {
-        return $this->belongsToMany(Entrenamiento::class, 'entrenamiento_deportista', 'deportista_id', 'entrenamiento_id')
+        return $this->belongsToMany(Entrenamiento::class, 'entrenamiento_asistencias', 'deportista_id', 'entrenamiento_id')
             ->withPivot('asistio', 'observaciones', 'hora_llegada')
             ->withTimestamps();
     }
@@ -88,5 +88,14 @@ class Deportista extends Model
     public function inscripciones()
     {
         return $this->hasMany(EventoInscripcion::class, 'deportista_id');
+    }
+
+    public function getEloMaximoAttribute()
+    {
+        if($this->elo_internacional >= $this->elo_nacional) {
+            return $this->elo_internacional;
+        } else {
+            return $this->elo_nacional;
+        }
     }
 }

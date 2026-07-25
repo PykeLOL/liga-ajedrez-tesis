@@ -24,6 +24,7 @@ class EventoController extends Controller
         $eventos = $eventos->map(function ($evento) {
             return [
                 'id' => $evento->id,
+                'tipo_evento_id' => $evento->tipo_evento_id,
                 'imagen_principal' => $evento->media->sortBy('orden')->first()
                     ? '/storage/'.$evento->media->sortBy('orden')->first()->path
                     : asset('img/eventos/default.jpg'),

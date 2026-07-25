@@ -18,7 +18,7 @@ class ClubSeeder extends Seeder
             ->value('id');
 
         $estadoId = DB::table('estados')
-            ->where('descripcion', 'Activo')
+            ->where('nombre', 'Activo')
             ->value('id');
 
         $adminId = DB::table('usuarios')

@@ -51,6 +51,18 @@ class ModuloSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'nombre' => 'entrenamientos',
+                'descripcion' => 'Registro y administración de los entrenamientos deportivos.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'planes-entrenamiento',
+                'descripcion' => 'Registro y administración de los planes de entrenamiento.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 'nombre' => 'ligas',
                 'descripcion' => 'Gestión de ligas deportivas y sus asociaciones con clubes.',
                 'created_at' => now(),
@@ -113,6 +125,12 @@ class ModuloSeeder extends Seeder
             [
                 'nombre' => 'foros',
                 'descripcion' => 'Administración de la información de los foros de discusión.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'solicitudes',
+                'descripcion' => 'Administración de la información de las solicitudes de registro.',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

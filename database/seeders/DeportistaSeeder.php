@@ -82,9 +82,30 @@ class DeportistaSeeder extends Seeder
         $eloMasAlto = max($classical, $rapid, $blitz);
 
         $tituloId = DB::table('titulos')
-            ->where('nombre_fide', $data['fide_title'] ?? null)
-            ->value('id')
-            ?? DB::table('titulos')->where('abreviacion', 'ST')->value('id');
+            ->where('abreviacion', 'ST')
+            ->value('id');
+
+        try {
+            $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
+            $response = Http::timeout(3)->get($url);
+            if ($response->successful()) {
+                $data = $response->json();
+                $history = $data['history'][0] ?? [];
+
+                $classical = $history['classical_rating'] ?? 0;
+                $rapid = $history['rapid_rating'] ?? 0;
+                $blitz = $history['blitz_rating'] ?? 0;
+
+                $eloMasAlto = max($classical, $rapid, $blitz);
+
+                $tituloId = DB::table('titulos')
+                    ->where('nombre_fide', $data['fide_title'] ?? null)
+                    ->value('id') ?? $tituloId;
+            }
+        } catch (\Throwable $e) {
+            // La API está caída o no responde.
+            // Se usan los valores por defecto.
+        }
 
         DB::table('deportistas')->updateOrInsert(
             ['usuario_id' => $usuarioId],

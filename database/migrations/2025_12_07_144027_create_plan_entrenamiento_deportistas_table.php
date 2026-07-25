@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePlanDeportistasTable extends Migration
+class CreatePlanEntrenamientoDeportistasTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreatePlanDeportistasTable extends Migration
      */
     public function up()
     {
-        Schema::create('plan_deportistas', function (Blueprint $table) {
+        Schema::create('planes_entrenamiento_deportistas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('plan_entrenamiento_id')->constrained('planes_entrenamiento')->cascadeOnDelete();
             $table->foreignId('deportista_id')->constrained('deportistas')->cascadeOnDelete();
@@ -29,6 +29,6 @@ class CreatePlanDeportistasTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('plan_deportistas');
+        Schema::dropIfExists('planes_entrenamiento_deportistas');
     }
 }

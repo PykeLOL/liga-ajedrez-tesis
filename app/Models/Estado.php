@@ -17,7 +17,7 @@ class Estado extends Model
     public const RECHAZADO = 4;
 
     protected $fillable = [
-        'descripcion',
+        'nombre',
     ];
 
     public $timestamps = false;

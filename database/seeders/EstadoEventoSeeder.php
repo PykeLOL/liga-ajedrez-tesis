@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\EstadoEvento;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class EstadoEventoSeeder extends Seeder
 {
@@ -16,11 +15,11 @@ class EstadoEventoSeeder extends Seeder
     public function run()
     {
         $estados = [
-            ['nombre' => 'Borrador', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Publicado', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'En Curso', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Finalizado', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Cancelado', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 1, 'nombre' => 'Borrador'],
+            ['id' => 2, 'nombre' => 'Publicado'],
+            ['id' => 3, 'nombre' => 'En Curso'],
+            ['id' => 4, 'nombre' => 'Finalizado'],
+            ['id' => 5, 'nombre' => 'Cancelado'],
         ];
 
         foreach ($estados as $estado) {

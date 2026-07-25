@@ -19,11 +19,15 @@ class CreatePlanesEntrenamientoTable extends Migration
             $table->foreignId('categoria_id')->constrained('categorias')->cascadeOnDelete();
             $table->foreignId('genero_id')->constrained('generos')->cascadeOnDelete();
             $table->foreignId('entrenador_id')->constrained('entrenadores')->cascadeOnDelete();
+            $table->foreignId('tipo_entrenamiento_id')->constrained('tipos_entrenamiento')->restrictOnDelete();
             $table->string('nombre');
             $table->text('descripcion')->nullable();
+            $table->string('ubicacion')->nullable();
+            $table->string('url_mapa', 500)->nullable();
             $table->date('fecha_inicio');
-            $table->date('fecha_fin');
+            $table->date('fecha_fin')->nullable();
             $table->foreignId('evento_id')->nullable()->constrained('eventos')->nullOnDelete();
+            $table->foreignId('estado_plan_id')->constrained('estados_plan')->restrictOnDelete();
             $table->timestamps();
         });
     }

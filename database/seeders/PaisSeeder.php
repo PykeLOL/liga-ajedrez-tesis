@@ -13,6 +13,9 @@ class PaisSeeder extends Seeder
             [
                 'nombre' => 'Colombia',
             ],
+            [
+                'nombre' => 'Otro',
+            ],
         ];
 
         foreach ($paises as $pais) {

@@ -10,51 +10,74 @@ class MunicipioSeeder extends Seeder
 {
     public function run()
     {
-        $departamentoId = Departamento::where('nombre', 'Meta')->value('id');
-        $municipios = [
-            ['nombre' => 'Villavicencio'],
-            ['nombre' => 'Acacías'],
-            ['nombre' => 'Barranca de Upía'],
-            ['nombre' => 'Cabuyaro'],
-            ['nombre' => 'Castilla La Nueva'],
-            ['nombre' => 'Cubarral'],
-            ['nombre' => 'Cumaral'],
-            ['nombre' => 'El Calvario'],
-            ['nombre' => 'El Castillo'],
-            ['nombre' => 'El Dorado'],
-            ['nombre' => 'Fuente de Oro'],
-            ['nombre' => 'Granada'],
-            ['nombre' => 'Guamal'],
-            ['nombre' => 'La Macarena'],
-            ['nombre' => 'La Uribe'],
-            ['nombre' => 'Lejanías'],
-            ['nombre' => 'Mapiripán'],
-            ['nombre' => 'Mesetas'],
-            ['nombre' => 'Puerto Concordia'],
-            ['nombre' => 'Puerto Gaitán'],
-            ['nombre' => 'Puerto Lleras'],
-            ['nombre' => 'Puerto López'],
-            ['nombre' => 'Puerto Rico'],
-            ['nombre' => 'Restrepo'],
-            ['nombre' => 'San Carlos de Guaroa'],
-            ['nombre' => 'San Juan de Arama'],
-            ['nombre' => 'San Juanito'],
-            ['nombre' => 'San Martín'],
-            ['nombre' => 'Vista Hermosa'],
-        ];
+        require database_path('seeders/data/DepartamentosMunicipiosColombia.php');
 
-        foreach ($municipios as $municipio) {
+        $departamentos = Departamento::pluck('id', 'nombre')->toArray();
 
-            Municipio::firstOrCreate(
-                [
-                    'nombre' => $municipio['nombre'],
-                    'departamento_id' => $departamentoId,
-                ],
-                [
-                    'nombre' => $municipio['nombre'],
-                    'departamento_id' => $departamentoId,
-                ]
-            );
+        foreach ($municipios as $departamento => $listaMunicipios) {
+
+            $nombreDepartamento = $this->nombreDepartamento($departamento);
+
+            if (!isset($departamentos[$nombreDepartamento])) {
+                continue;
+            }
+
+            $departamentoId = $departamentos[$nombreDepartamento];
+
+            foreach ($listaMunicipios as $codigo => $municipio) {
+
+                $nombreMunicipio = trim(explode(' - ', $municipio)[0]);
+
+                Municipio::firstOrCreate(
+                    [
+                        'nombre' => $nombreMunicipio,
+                        'departamento_id' => $departamentoId,
+                    ],
+                    [
+                        'nombre' => $nombreMunicipio,
+                        'departamento_id' => $departamentoId,
+                    ]
+                );
+            }
         }
+    }
+
+    private function nombreDepartamento(string $key): string
+    {
+        return [
+            'amazonas' => 'Amazonas',
+            'antioquia' => 'Antioquia',
+            'arauca' => 'Arauca',
+            'atlantico' => 'Atlántico',
+            'bogota' => 'Bogotá D.C.',
+            'bolivar' => 'Bolívar',
+            'boyaca' => 'Boyacá',
+            'caldas' => 'Caldas',
+            'caqueta' => 'Caquetá',
+            'casanare' => 'Casanare',
+            'cauca' => 'Cauca',
+            'cesar' => 'Cesar',
+            'choco' => 'Chocó',
+            'cordoba' => 'Córdoba',
+            'cundinamarca' => 'Cundinamarca',
+            'guainia' => 'Guainía',
+            'guajira' => 'La Guajira',
+            'guaviare' => 'Guaviare',
+            'huila' => 'Huila',
+            'magdalena' => 'Magdalena',
+            'meta' => 'Meta',
+            'narino' => 'Nariño',
+            'norteSantander' => 'Norte de Santander',
+            'putumayo' => 'Putumayo',
+            'quindio' => 'Quindío',
+            'risaralda' => 'Risaralda',
+            'sanAndres' => 'San Andrés y Providencia',
+            'santander' => 'Santander',
+            'sucre' => 'Sucre',
+            'tolima' => 'Tolima',
+            'valle' => 'Valle del Cauca',
+            'vaupes' => 'Vaupés',
+            'vichada' => 'Vichada',
+        ][$key];
     }
 }
