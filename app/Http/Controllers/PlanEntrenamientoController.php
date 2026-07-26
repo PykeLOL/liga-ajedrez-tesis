@@ -8,14 +8,24 @@ use App\Models\PlanEntrenamiento;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\PlanEntrenamientoHorario;
+use App\Services\PlanEntrenamientoGeneratorService;
 use App\Http\Resources\PlanEntrenamiento\PlanEntrenamientoResource;
 use App\Http\Requests\PlanEntrenamiento\StorePlanEntrenamientoRequest;
 use App\Http\Requests\PlanEntrenamiento\UpdatePlanEntrenamientoRequest;
 use App\Http\Resources\PlanEntrenamiento\PlanEntrenamientoIndexResource;
 use App\Http\Resources\PlanEntrenamiento\PlanEntrenamientoResumenResource;
+use App\Http\Resources\PlanEntrenamiento\PlanEntrenamientoGeneracionPreviewResource;
 
 class PlanEntrenamientoController extends Controller
 {
+    protected PlanEntrenamientoGeneratorService $planEntrenamientoGeneratorService;
+
+    public function __construct(
+        PlanEntrenamientoGeneratorService $planEntrenamientoGeneratorService
+    ) {
+        $this->planEntrenamientoGeneratorService = $planEntrenamientoGeneratorService;
+    }
+
     public function index()
     {
         $planes = PlanEntrenamiento::with([
@@ -26,7 +36,11 @@ class PlanEntrenamientoController extends Controller
             'tipo',
             'evento',
             'estado',
+            'horarios',
+            'horarios.diaSemana',
+            'deportistas'
         ])
+        ->withCount('deportistas')
         ->orderByDesc('id')
         ->get();
 
@@ -208,7 +222,7 @@ class PlanEntrenamientoController extends Controller
 
     private function obtenerEstadoInicial()
     {
-        return EstadoPlan::where('nombre', EstadoPlan::ACTIVO)->value('id');
+        return EstadoPlan::where('nombre', EstadoPlan::BORRADOR)->value('id');
     }
 
     public function resumen(int $id)
@@ -227,5 +241,25 @@ class PlanEntrenamientoController extends Controller
         ])->findOrFail($id);
 
         return new PlanEntrenamientoResumenResource($plan);
+    }
+
+    public function previewGeneracion(int $id)
+    {
+        $plan = PlanEntrenamiento::findOrFail($id);
+
+        return new PlanEntrenamientoGeneracionPreviewResource(
+            $this->planEntrenamientoGeneratorService->preview($plan)
+        );
+    }
+
+    public function generarEntrenamientos(int $id)
+    {
+        $plan = PlanEntrenamiento::findOrFail($id);
+        $total = $this->planEntrenamientoGeneratorService->generar($plan);
+
+        return response()->json([
+            'message' => 'Entrenamientos generados correctamente.',
+            'total_generados' => $total,
+        ]);
     }
 }

@@ -21,7 +21,7 @@ class PermisoSeeder extends Seeder
 
         foreach ($modulos as $modulo) {
             foreach ($acciones as $accion) {
-                if (in_array($accion->nombre, ['permisos', 'descargar', 'aprobar', 'cargar'])) {
+                if (in_array($accion->nombre, ['permisos', 'descargar', 'aprobar', 'cargar', 'generar'])) {
                     continue;
                 }
 
@@ -50,6 +50,14 @@ class PermisoSeeder extends Seeder
                 'descripcion' => "Permite gestionar los permisos asignados a cada rol.",
                 'tipo_accion_id' => $acciones->firstWhere('nombre', 'permisos')->id ?? null,
                 'modulo_id' => $modulos->firstWhere('nombre', 'roles')->id ?? null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => "generar-planes-entrenamiento",
+                'descripcion' => "Permite generar entrenamientos a base de un plan.",
+                'tipo_accion_id' => $acciones->firstWhere('nombre', 'generar')->id ?? null,
+                'modulo_id' => $modulos->firstWhere('nombre', 'planes-entrenamiento')->id ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

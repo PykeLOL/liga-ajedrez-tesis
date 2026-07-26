@@ -59,22 +59,6 @@ class DeportistaSeeder extends Seeder
         $clubId,
         $categoriaId
     ) {
-
-        // $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
-        // $response = Http::get($url);
-
-        // if (!$response->successful()) {
-        //     return;
-        // }
-
-        // $data = $response->json();
-
-        // $history = $data['history'][0] ?? [];
-
-        // $classical = $history['classical_rating'] ?? 0;
-        // $rapid = $history['rapid_rating'] ?? 0;
-        // $blitz = $history['blitz_rating'] ?? 0;
-
         $classical = 0;
         $rapid = 0;
         $blitz = 0;
@@ -87,7 +71,7 @@ class DeportistaSeeder extends Seeder
 
         try {
             $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
-            $response = Http::timeout(3)->get($url);
+            $response = Http::timeout(1)->get($url);
             if ($response->successful()) {
                 $data = $response->json();
                 $history = $data['history'][0] ?? [];

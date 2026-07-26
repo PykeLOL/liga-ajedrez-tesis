@@ -87,4 +87,9 @@ class PlanEntrenamiento extends Model
     {
         return $this->hasMany(Entrenamiento::class);
     }
+
+    public function entrenamientosGenerados()
+    {
+        return $this->hasMany(Entrenamiento::class)->where('generado_automaticamente', true);
+    }
 }

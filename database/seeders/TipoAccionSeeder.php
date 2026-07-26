@@ -64,6 +64,12 @@ class TipoAccionSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'nombre' => 'generar',
+                'descripcion' => 'Generar registros.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
         foreach ($acciones as $accion) {

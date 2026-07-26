@@ -199,10 +199,7 @@ class EntrenamientoController extends Controller
 
     private function obtenerEstadoProgramado(): int
     {
-        return EstadoEntrenamiento::where(
-            'nombre',
-            EstadoEntrenamiento::PROGRAMADO
-        )->firstOrFail()->id;
+        return EstadoEntrenamiento::where('nombre', EstadoEntrenamiento::PROGRAMADO)->firstOrFail()->id;
     }
 
     private function crearAsistenciasDeportista(iterable $deportistas, Entrenamiento $entrenamiento): void

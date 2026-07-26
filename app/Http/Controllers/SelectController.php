@@ -11,6 +11,7 @@ use App\Models\Titulo;
 use App\Models\Modulo;
 use App\Models\Genero;
 use App\Models\Usuario;
+use App\Models\DiaSemana;
 use App\Models\RedSocial;
 use App\Models\Categoria;
 use App\Models\Entrenador;
@@ -207,5 +208,11 @@ class SelectController extends Controller
             });
 
         return response()->json($deportistas);
+    }
+
+    public function diasSemana()
+    {
+        $diasSemana = DiaSemana::select('id','nombre', 'numero')->get();
+        return response()->json($diasSemana);
     }
 }

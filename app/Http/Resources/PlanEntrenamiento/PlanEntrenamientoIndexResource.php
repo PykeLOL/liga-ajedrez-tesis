@@ -10,47 +10,36 @@ class PlanEntrenamientoIndexResource extends JsonResource
     {
         return [
             'id' => $this->id,
-
             'nombre' => $this->nombre,
 
             'fecha_inicio' => optional($this->fecha_inicio)->format('Y-m-d'),
+            'fecha_fin'    => optional($this->fecha_fin)->format('Y-m-d'),
 
-            'fecha_fin' => optional($this->fecha_fin)->format('Y-m-d'),
+            'horarios' => $this->horarios->map(function ($horario) {
+                return [
+                    'dia'          => optional($horario->diaSemana)->nombre,
+                    'hora_inicio'  => $horario->hora_inicio,
+                    'hora_fin'     => $horario->hora_fin,
+                ];
+            }),
 
-            'club' => [
-                'id' => optional($this->club)->id,
-                'nombre' => optional($this->club)->nombre,
-            ],
+            'club' => optional($this->club)->nombre,
+            'categoria' => optional($this->categoria)->nombre,
+            'genero' => optional($this->genero)->nombre,
+            'entrenador' => optional(optional($this->entrenador)->usuario)->nombre_completo,
+            'tipo_entrenamiento' => optional($this->tipo)->nombre,
+            'evento' => optional($this->evento)->nombre,
+            'estado' => optional($this->estado)->nombre,
 
-            'categoria' => [
-                'id' => optional($this->categoria)->id,
-                'nombre' => optional($this->categoria)->nombre,
-            ],
+            'total_deportistas' => $this->deportistas_count,
 
-            'genero' => [
-                'id' => optional($this->genero)->id,
-                'nombre' => optional($this->genero)->nombre,
-            ],
-
-            'entrenador' => [
-                'id' => optional($this->entrenador)->id,
-                'nombre' => optional(optional($this->entrenador)->usuario)->nombre_completo,
-            ],
-
-            'evento' => [
-                'id' => optional($this->evento)->id,
-                'nombre' => optional($this->evento)->nombre,
-            ],
-
-            'estado' => [
-                'id' => optional($this->estado)->id,
-                'nombre' => optional($this->estado)->nombre,
-            ],
-
-            'tipo' => [
-                'id' => optional($this->tipo)->id,
-                'nombre' => optional($this->tipo)->nombre,
-            ],
+            'deportistas' => $this->deportistas->map(function ($deportista) {
+                return [
+                    'id' => $deportista->id,
+                    'nombre' => optional($deportista->usuario)->nombre_completo,
+                    'documento' => optional($deportista->usuario)->numero_identificacion,
+                ];
+            }),
 
             'ubicacion' => $this->ubicacion,
             'url_mapa' => $this->url_mapa,
