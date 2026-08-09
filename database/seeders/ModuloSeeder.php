@@ -133,13 +133,7 @@ class ModuloSeeder extends Seeder
                 'descripcion' => 'Administración de la información de las solicitudes de registro.',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ],
-            [
-                'nombre' => 'solicitudes',
-                'descripcion' => 'Administración de la información de las solicitudes de registro.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            ]
         ];
 
         foreach ($modulos as $modulo) {

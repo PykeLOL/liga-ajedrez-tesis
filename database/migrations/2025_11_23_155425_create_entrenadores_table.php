@@ -22,6 +22,7 @@ class CreateEntrenadoresTable extends Migration
             $table->foreignId('nacionalidad_id')->constrained('nacionalidades')->onDelete('restrict');
             $table->integer('experiencia_anios')->default(0);
             $table->string('especialidad')->nullable();
+            $table->string('fide_id')->nullable();
             $table->boolean('estado')->default(true);
             $table->timestamps();
         });

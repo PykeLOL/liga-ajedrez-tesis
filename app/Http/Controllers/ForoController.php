@@ -14,11 +14,13 @@ class ForoController extends Controller
     public function index()
     {
         $foros = Publicacion::with(
+            'usuario:id,nombre,apellido,email,imagen_path',
             'media',
-                'comentarios',
-                'comentarios.usuario:id,nombre',
-                'comentarios.reacciones:id,publicacion_comentario_id,usuario_id,reaccion_id',
-                'comentarios.reacciones.reaccion:id,nombre,icono'
+            'reacciones.reaccion:id,nombre,icono',
+            'comentarios',
+            'comentarios.usuario:id,nombre,apellido,imagen_path',
+            'comentarios.reacciones:id,publicacion_comentario_id,usuario_id,reaccion_id',
+            'comentarios.reacciones.reaccion:id,nombre,icono'
             )->get();
         return response()->json($foros);
     }
@@ -89,12 +91,13 @@ class ForoController extends Controller
         ], 201);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
         $foro = Publicacion::with(
+            'usuario:id,nombre,apellido,email,imagen_path',
             'media',
             'comentarios',
-            'comentarios.usuario:id,nombre',
+            'comentarios.usuario:id,nombre,apellido,imagen_path',
             'comentarios.reacciones:id,publicacion_comentario_id,usuario_id,reaccion_id',
             'comentarios.reacciones.reaccion:id,nombre,icono'
         )->find($id);
@@ -210,7 +213,7 @@ class ForoController extends Controller
             'foro' => $foro->load(
                 'media',
                 'comentarios',
-                'comentarios.usuario:id,nombre',
+                'comentarios.usuario:id,nombre,apellido,imagen_path',
                 'comentarios.reacciones:id,publicacion_comentario_id,usuario_id,reaccion_id',
                 'comentarios.reacciones.reaccion:id,nombre,icono'
             )
@@ -245,6 +248,52 @@ class ForoController extends Controller
         return response()->json(['message' => 'Foro eliminado exitosamente'], 200);
     }
 
+    public function reaccionarPublicacion(Request $request, int $foroId)
+    {
+        $foro = Publicacion::find($foroId);
+        if (!$foro) {
+            return response()->json(['message' => 'Foro no encontrado'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'reaccion_id' => 'required|integer|exists:reacciones,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error de validación',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $reaccion = $foro->reacciones()->updateOrCreate(
+            ['usuario_id' => auth()->id()],
+            ['reaccion_id' => $request->reaccion_id]
+        );
+
+        return response()->json([
+            'message' => 'Reacción aplicada exitosamente',
+            'reaccion' => $reaccion->load('reaccion:id,nombre,icono')
+        ], 200);
+    }
+
+    public function eliminarReaccionForo($foroId)
+    {
+        $foro = Publicacion::find($foroId);
+        if (!$foro) {
+            return response()->json(['message' => 'Foro no encontrado'], 404);
+        }
+
+        $reaccion = $foro->reacciones()->where('usuario_id', auth()->id())->first();
+        if (!$reaccion) {
+            return response()->json(['message' => 'Reacción no encontrada'], 404);
+        }
+
+        $reaccion->delete();
+
+        return response()->json(['message' => 'Reacción eliminada exitosamente'], 200);
+    }
+
     public function comentarPublicacion(Request $request, $id)
     {
         $foro = Publicacion::find($id);
@@ -272,7 +321,7 @@ class ForoController extends Controller
 
         return response()->json([
             'message' => 'Comentario agregado exitosamente',
-            'comentario' => $comentario->load('usuario:id,nombre')
+            'comentario' => $comentario->load('usuario:id,nombre,apellido,imagen_path')
         ], 201);
     }
 

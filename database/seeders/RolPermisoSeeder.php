@@ -7,84 +7,114 @@ use Illuminate\Support\Facades\DB;
 
 class RolPermisoSeeder extends Seeder
 {
+    private const PERMISOS = [
+
+        'Admin' => [
+            '*' => ['*'],
+        ],
+
+        'Presidente Liga' => [
+            'clubes' => ['ver', 'crear', 'editar', 'eliminar'],
+            'eventos' => ['ver', 'crear', 'editar', 'eliminar'],
+            'categorias' => ['ver', 'crear', 'editar', 'eliminar'],
+            'generos' => ['ver', 'crear', 'editar', 'eliminar'],
+            'deportistas' => ['ver', 'crear', 'editar', 'eliminar'],
+            'entrenadores' => ['ver', 'crear', 'editar', 'eliminar'],
+            'titulos' => ['ver', 'crear', 'editar', 'eliminar'],
+            'planes-entrenamiento' => ['ver', 'crear', 'editar', 'eliminar'],
+            'entrenamientos' => ['ver', 'crear', 'editar', 'eliminar'],
+            'solicitudes' => ['ver', 'editar', 'autorizar'],
+            'ligas' => ['ver', 'editar'],
+            'usuarios' => ['ver'],
+            'roles' => ['ver'],
+        ],
+
+        'Presidente Club' => [
+            'clubes' => ['ver', 'editar'],
+            'categorias' => ['ver'],
+            'generos' => ['ver'],
+            'titulos' => ['ver'],
+            'usuarios' => ['ver'],
+            'deportistas' => ['ver', 'crear', 'editar'],
+            'entrenadores' => ['ver', 'crear', 'editar'],
+            'eventos' => ['ver', 'crear', 'editar'],
+            'planes-entrenamiento' => ['ver', 'crear', 'editar'],
+            'entrenamientos' => ['ver', 'crear', 'editar'],
+            'solicitudes' => ['ver', 'editar', 'autorizar'],
+        ],
+
+        'Director' => [
+            'clubes' => ['ver'],
+            'categorias' => ['ver'],
+            'generos' => ['ver'],
+            'titulos' => ['ver'],
+            'usuarios' => ['ver'],
+            'deportistas' => ['ver', 'crear', 'editar'],
+            'entrenadores' => ['ver', 'crear', 'editar'],
+            'eventos' => ['ver', 'crear', 'editar'],
+            'planes-entrenamiento' => ['ver'],
+            'entrenamientos' => ['ver'],
+        ],
+
+        'Entrenador' => [
+            'clubes' => ['ver'],
+            'categorias' => ['ver'],
+            'generos' => ['ver'],
+            'titulos' => ['ver'],
+            'entrenadores' => ['ver'],
+            'eventos' => ['ver'],
+            'deportistas' => ['ver', 'editar'],
+            'planes-entrenamiento' => ['ver'],
+            'entrenamientos' => ['ver'],
+        ],
+
+        'Deportista' => [
+            'eventos' => ['ver'],
+            'entrenamientos' => ['ver'],
+        ],
+    ];
+
     public function run(): void
     {
         DB::table('roles_permisos')->truncate();
 
         $roles = DB::table('roles')->pluck('id', 'nombre');
 
-        $permisos = DB::table('permisos')->get()->groupBy(function ($permiso) {
-            return $permiso->nombre;
-        });
-
         $insert = [];
 
-        $this->asignarTodos($insert, $roles['Admin']);
+        foreach (self::PERMISOS as $rol => $modulos) {
 
-        $this->asignarPorModulo($insert, $roles['Presidente Liga'], [
-            'clubes', 'eventos', 'categorias',
-            'generos', 'deportistas', 'entrenadores', 'titulos'
-        ], ['ver', 'crear', 'editar', 'eliminar']);
+            if (!isset($roles[$rol])) {
+                continue;
+            }
 
-        $this->asignarPorModulo($insert, $roles['Presidente Liga'], [
-            'ligas'
-        ], ['ver', 'editar']);
+            if (isset($modulos['*'])) {
+                $this->asignarTodos($insert, $roles[$rol]);
+                continue;
+            }
 
-        $this->asignarPorModulo($insert, $roles['Presidente Liga'], [
-            'usuarios', 'roles'
-        ], ['ver']);
-
-        $this->asignarPorModulo($insert, $roles['Presidente Club'], [
-            'deportistas', 'entrenadores', 'eventos'
-        ], ['ver', 'crear', 'editar']);
-
-        $this->asignarPorModulo($insert, $roles['Presidente Club'], [
-            'clubes', 'categorias', 'generos', 'titulos', 'usuarios'
-        ], ['ver']);
-
-        $this->asignarPorModulo($insert, $roles['Director'], [
-            'deportistas', 'eventos', 'entrenadores', 'eventos'
-        ], ['ver', 'crear', 'editar']);
-
-        $this->asignarPorModulo($insert, $roles['Director'], [
-            'clubes', 'categorias', 'generos', 'titulos', 'usuarios'
-        ], ['ver']);
-
-        $this->asignarPorModulo($insert, $roles['Entrenador'], [
-            'deportistas'
-        ], ['ver', 'editar']);
-
-        $this->asignarPorModulo($insert, $roles['Entrenador'], [
-            'eventos', 'categorias', 'clubes',
-            'entrenadores', 'generos', 'titulos'
-        ], ['ver']);
-
-        // $this->asignarPorModulo($insert, $roles['Deportista'], [
-        //     'eventos', 'categorias', 'clubes', 'titulos'
-        // ], ['ver']);
+            foreach ($modulos as $modulo => $acciones) {
+                $this->asignarPermisos($insert, $roles[$rol], $modulo, $acciones);
+            }
+        }
 
         DB::table('roles_permisos')->insert($insert);
     }
 
-    private function asignarTodos(&$insert, $rolId)
+    private function asignarTodos(array &$insert, int $rolId): void
     {
-        $permisos = DB::table('permisos')->pluck('id');
-
-        foreach ($permisos as $permisoId) {
+        foreach (DB::table('permisos')->pluck('id') as $permisoId) {
             $insert[] = $this->row($rolId, $permisoId);
         }
     }
 
-    private function asignarPorModulo(&$insert, $rolId, array $modulos, array $acciones)
+    private function asignarPermisos(array &$insert, int $rolId, string $modulo, array $acciones): void
     {
         $permisos = DB::table('permisos')
-            ->where(function ($q) use ($modulos, $acciones) {
-                foreach ($modulos as $modulo) {
-                    foreach ($acciones as $accion) {
-                        $q->orWhere('nombre', "{$accion}-{$modulo}");
-                    }
-                }
-            })
+            ->whereIn(
+                'nombre',
+                array_map(fn($accion) => "{$accion}-{$modulo}", $acciones)
+            )
             ->pluck('id');
 
         foreach ($permisos as $permisoId) {
@@ -92,7 +122,7 @@ class RolPermisoSeeder extends Seeder
         }
     }
 
-    private function row($rolId, $permisoId)
+    private function row(int $rolId, int $permisoId): array
     {
         return [
             'rol_id' => $rolId,

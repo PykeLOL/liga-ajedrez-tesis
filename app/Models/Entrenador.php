@@ -19,6 +19,7 @@ class Entrenador extends Model
         'nacionalidad_id',
         'experiencia_anios',
         'especialidad',
+        'fide_id',
         'estado',
     ];
 
@@ -52,7 +53,7 @@ class Entrenador extends Model
     public function categorias()
     {
         return $this->belongsToMany(Categoria::class, 'categorias_entrenador', 'entrenador_id', 'categoria_id')
-                    ->withPivot('ritmo_id', 'estado')
+                    ->withPivot('estado')
                     ->withTimestamps();
     }
 

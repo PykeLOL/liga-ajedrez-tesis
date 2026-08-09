@@ -10,11 +10,21 @@ use App\Models\EstadoEvento;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\EventoDocumento;
+use App\Services\EventoService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\Eventos\InscripcionResource;
+use App\Http\Requests\Evento\ConfirmarInscripcionRequest;
 
 class EventoController extends Controller
 {
+    protected EventoService $eventoService;
+
+    public function __construct(EventoService $eventoService)
+    {
+        $this->eventoService = $eventoService;
+    }
+
     public function index()
     {
         $eventos = Evento::whereHas('tipoEvento', function ($q) {
@@ -51,7 +61,7 @@ class EventoController extends Controller
         return response()->json($eventos);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
         $evento = Evento::with([
                 'tipoEvento',
@@ -470,7 +480,7 @@ class EventoController extends Controller
         ], 200);
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $evento = Evento::whereHas('tipoEvento', fn($q) =>
             $q->where('nombre', '!=', 'Torneo')
@@ -496,7 +506,29 @@ class EventoController extends Controller
         return response()->json($eventos);
     }
 
-    public function getEventosPorTipo(Request $request, $id)
+    public function indexHomeHome()
+    {
+        $perPage = 4;
+
+        $eventos = Evento::with([
+            'tipoEvento',
+            'estadoEvento',
+            'organizadores',
+            'media',
+            'documentos',
+            'redesSociales',
+            'asistencias'
+        ])
+        ->where('publicado', true)
+        ->whereHas('tipoEvento', fn($q) =>
+            $q->where('nombre', '!=', 'Torneo')
+        )
+        ->paginate($perPage);
+
+        return response()->json($eventos->items());
+    }
+
+    public function getEventosPorTipo(Request $request, int $id)
     {
         $tipo = $request->get('tipo', 'proximos');
         $perPage = $request->get('per_page', 10);
@@ -512,8 +544,9 @@ class EventoController extends Controller
             'categorias.categoria',
             'categorias.ritmo',
             'inscripciones',
-            'asistencias'
+            'asistencias:id,evento_id,usuario_id'
         ])
+        ->withCount('asistencias')
         ->where('tipo_evento_id', $id)
         ->whereHas('estadoEvento', fn($q) =>
             $q->where('nombre', '!=', 'Borrador')
@@ -528,10 +561,19 @@ class EventoController extends Controller
             $query->whereDate('fecha_inicio', '<', $hoy);
         }
 
-        $eventos = $query->orderBy('fecha_inicio')->paginate($perPage);
+        $eventos = $query
+            ->orderBy('fecha_inicio')
+            ->paginate($perPage);
+
+        $tipoEvento = TipoEvento::find($id);
+        if($tipoEvento->nombre == 'Torneo') {
+            $data = $this->mapTorneoEventos($eventos->getCollection());
+        } else {
+            $data = $this->mapEventos($eventos->getCollection());
+        }
 
         return response()->json([
-            'data' => $this->mapEventos($eventos->getCollection()),
+            'data' => $data,
             'meta' => [
                 'current_page' => $eventos->currentPage(),
                 'last_page' => $eventos->lastPage(),
@@ -541,13 +583,13 @@ class EventoController extends Controller
 
     private function mapEventos($eventos)
     {
-        return $eventos->map(function ($evento) {
+        $usuario = auth()->user();
+        return $eventos->map(function ($evento) use ($usuario) {
 
             $hoy = Carbon::today();
             $esProximo = Carbon::parse($evento->fecha_inicio)->gte($hoy);
             $tipoSlug = strtolower(optional($evento->tipoEvento)->slug ?? 'evento');
-
-            $tieneClubes = $evento->organizadores && $evento->organizadores->count() > 0;
+            $tieneClubes = $evento->organizadores->isNotEmpty();
 
             if ($tipoSlug === 'torneo') {
                 $ui = [
@@ -557,22 +599,21 @@ class EventoController extends Controller
                     'clase' => 'meeting-type-torneo'
                 ];
             } else {
-                if ($tieneClubes) {
-                    $ui = [
+                $ui = $tieneClubes
+                    ? [
                         'label' => 'CLUB',
                         'icon'  => 'bi-shield-shaded',
                         'badge' => 'bg-primary',
                         'clase' => 'meeting-type-club'
-                    ];
-                } else {
-                    $ui = [
+                    ]
+                    : [
                         'label' => 'LIGA',
                         'icon'  => 'bi-megaphone-fill',
                         'badge' => 'bg-success',
                         'clase' => 'meeting-type-liga'
                     ];
-                }
             }
+
             return [
                 'id' => $evento->id,
                 'nombre' => $evento->nombre,
@@ -587,20 +628,33 @@ class EventoController extends Controller
                 'fecha_fin' => $evento->fecha_fin,
                 'fecha_fin_formateada' => Carbon::parse($evento->fecha_fin)->isoFormat('D [de] MMMM, YYYY'),
 
-                'categorias_ritmos' => $evento->categorias->map(fn($c)=>[
-                    'categoria'=>optional($c->categoria)->nombre ?? 'General',
-                    'ritmo'=>optional($c->ritmo)->nombre ?? 'No definido'
-                ])->unique(fn($i)=>$i['categoria'].'-'.$i['ritmo'])->values(),
+                'categorias_ritmos' => $evento->categorias
+                    ->map(fn($c) => [
+                        'categoria' => optional($c->categoria)->nombre ?? 'General',
+                        'ritmo' => optional($c->ritmo)->nombre ?? 'No definido'
+                    ])
+                    ->unique(fn($i) => $i['categoria'].'-'.$i['ritmo'])
+                    ->values(),
+
+                'documento' => $evento->documentos->first(),
 
                 'imagen_principal' => $evento->media->sortBy('orden')->first()
                     ? '/storage/'.$evento->media->sortBy('orden')->first()->path
                     : asset('img/eventos/default.jpg'),
 
                 'max_participantes' => $evento->max_participantes,
-                'inscritos' => $evento->inscripciones->count(),
+
+                'asistentes' => $evento->asistencias_count,
+
+                'confirmo_asistencia' => $usuario
+                    ? $evento->asistencias->contains('usuario_id', $usuario->id)
+                    : false,
 
                 'estado_label' => $esProximo ? 'Abierto' : 'Cerrado',
-                'estado_label_class' => $esProximo ? 'badge small badge-inscripcion-open' : 'badge small badge-inscripcion-soon',
+                'estado_label_class' => $esProximo
+                    ? 'badge small badge-inscripcion-open'
+                    : 'badge small badge-inscripcion-soon',
+
                 'permite_inscripcion' => $esProximo,
 
                 'tipo_label' => $ui['label'],
@@ -611,7 +665,89 @@ class EventoController extends Controller
         })->values();
     }
 
-    public function showPublic($id)
+    private function mapTorneoEventos($eventos)
+    {
+        $usuario = auth()->user();
+        return $eventos->map(function ($evento) use ($usuario) {
+
+            $hoy = Carbon::today();
+            $esProximo = Carbon::parse($evento->fecha_inicio)->gte($hoy);
+            $tipoSlug = strtolower(optional($evento->tipoEvento)->slug ?? 'evento');
+            $tieneClubes = $evento->organizadores->isNotEmpty();
+
+            if ($tipoSlug === 'torneo') {
+                $ui = [
+                    'label' => 'TORNEO',
+                    'icon'  => 'bi-trophy-fill',
+                    'badge' => 'bg-warning',
+                    'clase' => 'meeting-type-torneo'
+                ];
+            } else {
+                $ui = $tieneClubes
+                    ? [
+                        'label' => 'CLUB',
+                        'icon'  => 'bi-shield-shaded',
+                        'badge' => 'bg-primary',
+                        'clase' => 'meeting-type-club'
+                    ]
+                    : [
+                        'label' => 'LIGA',
+                        'icon'  => 'bi-megaphone-fill',
+                        'badge' => 'bg-success',
+                        'clase' => 'meeting-type-liga'
+                    ];
+            }
+
+            return [
+                'id' => $evento->id,
+                'nombre' => $evento->nombre,
+                'descripcion' => $evento->descripcion,
+                'lugar' => $evento->lugar,
+
+                'fecha_inicio' => $evento->fecha_inicio,
+                'fecha_inicio_formateada' => Carbon::parse($evento->fecha_inicio)->isoFormat('D [de] MMMM, YYYY'),
+                'hora_inicio' => $evento->hora_inicio
+                    ? Carbon::parse($evento->hora_inicio)->format('h:i A')
+                    : null,
+                'fecha_fin' => $evento->fecha_fin,
+                'fecha_fin_formateada' => Carbon::parse($evento->fecha_fin)->isoFormat('D [de] MMMM, YYYY'),
+
+                'categorias_ritmos' => $evento->categorias
+                    ->map(fn($c) => [
+                        'categoria' => optional($c->categoria)->nombre ?? 'General',
+                        'ritmo' => optional($c->ritmo)->nombre ?? 'No definido'
+                    ])
+                    ->unique(fn($i) => $i['categoria'].'-'.$i['ritmo'])
+                    ->values(),
+
+                'imagen_principal' => $evento->media->sortBy('orden')->first()
+                    ? '/storage/'.$evento->media->sortBy('orden')->first()->path
+                    : asset('img/eventos/default.jpg'),
+
+                'max_participantes' => $evento->max_participantes,
+
+                'inscritos' => $evento->inscripciones->count(),
+
+                'confirmo_asistencia' => $usuario
+                    ? $evento->asistencias->contains('usuario_id', $usuario->id)
+                    : false,
+
+                'estado_label' => $esProximo ? 'Abierto' : 'Cerrado',
+                'estado_label_class' => $esProximo
+                    ? 'badge small badge-inscripcion-open'
+                    : 'badge small badge-inscripcion-soon',
+
+                'permite_inscripcion' => $esProximo,
+
+                'tipo_label' => $ui['label'],
+                'tipo_icono' => $ui['icon'],
+                'tipo_badge' => $ui['badge'],
+                'tipo_clase' => $ui['clase'],
+            ];
+        })->values();
+    }
+
+    public function showPublic(int $id)
     {
         $evento = Evento::with([
             'tipoEvento',
@@ -619,16 +755,38 @@ class EventoController extends Controller
             'organizadores.club',
             'media',
             'documentos',
-            'categorias.categoria',
             'categorias.ritmo',
+            'categorias.genero',
+            'categorias.categoria',
             'categorias.inscripciones.deportista.usuario',
-            'inscripciones'
+            'inscripciones.estadoInscripcion'
         ])
         ->where('publicado', true)
         ->findOrFail($id);
 
-        $totalInscritos = $evento->inscripciones->count();
+        $totalInscritos = $evento->inscripcionesActivas->count();
         $cuposDisponibles = max($evento->max_participantes - $totalInscritos, 0);
+
+        $inscripcion = null;
+        if (auth()->check() && auth()->user()->deportista) {
+            $registro = $evento->inscripciones
+                ->where('deportista_id', auth()->user()->deportista->id)
+                ->sortByDesc('id')
+                ->first();
+
+            if ($registro) {
+                $inscripcion = [
+                    'id' => $registro->id,
+                    'categoria_id' => $registro->evento_categoria_id,
+                    'estado_id' => $registro->estado_inscripcion_id,
+                    'estado' => optional($registro->estadoInscripcion)->nombre,
+                    'pago' => (bool) $registro->pago,
+                    'comprobante' => $registro->comprobante_path
+                        ? '/storage/' . $registro->comprobante_path
+                        : null,
+                ];
+            }
+        }
 
         return response()->json([
             'id' => $evento->id,
@@ -642,10 +800,12 @@ class EventoController extends Controller
             'fecha_fin' => $evento->fecha_fin,
             'fecha_inicio_format' => $evento->fecha_inicio->translatedFormat('d \d\e F \d\e Y'),
             'fecha_fin_format' => $evento->fecha_fin->translatedFormat('d \d\e F \d\e Y'),
-            'hora_inicio' => $evento->hora_inicio ? Carbon::parse($evento->hora_inicio)->format('h:i A') : null,
+            'hora_inicio' => $evento->hora_inicio
+                ? Carbon::parse($evento->hora_inicio)->format('h:i A')
+                : null,
 
             'estado_evento' => optional($evento->estadoEvento)->nombre,
-            'de_pago' => (bool)$evento->de_pago,
+            'de_pago' => (bool) $evento->de_pago,
             'inscripciones_abiertas' => $evento->fecha_inicio->isFuture(),
 
             'max_participantes' => $evento->max_participantes,
@@ -654,6 +814,8 @@ class EventoController extends Controller
 
             'organizador_principal' => $evento->organizador_nombre,
             'organizador_contacto' => $evento->organizador_contacto,
+
+            'inscripcion' => $inscripcion,
 
             'media' => $evento->media
                 ->sortBy('orden')
@@ -665,43 +827,106 @@ class EventoController extends Controller
 
                     return [
                         'orden' => $m->orden,
-                        'tipo' => $m->tipo, // imagen | video | url
+                        'tipo' => $m->tipo,
                         'url' => $url,
                         'descripcion' => $m->descripcion,
                     ];
                 }),
 
-            'documentos' => $evento->documentos->sortBy('orden')->values()->map(fn($d) => [
-                'nombre' => $d->nombre,
-                'url' => '/storage/'.$d->path,
-                'tipo' => $d->tipo,
-            ]),
+            'documentos' => $evento->documentos
+                ->sortBy('orden')
+                ->values()
+                ->map(fn($d) => [
+                    'nombre' => $d->nombre,
+                    'url' => '/storage/' . $d->path,
+                    'tipo' => $d->tipo,
+                ]),
 
             'organizadores' => $evento->organizadores->map(fn($o) => [
                 'id' => $o->club_id,
                 'club' => optional($o->club)->nombre,
-                'logo' => optional($o->club)->logo ? '/storage/'.optional($o->club)->logo : null
+                'logo' => optional($o->club)->logo
+                    ? '/storage/' . optional($o->club)->logo
+                    : null,
             ]),
 
             'categorias' => $evento->categorias->map(function ($c) {
+
                 $inscripciones = $c->inscripciones;
+
                 return [
                     'id' => $c->id,
                     'categoria' => optional($c->categoria)->nombre,
+                    'genero' => optional($c->genero)->nombre,
                     'ritmo' => optional($c->ritmo)->nombre,
                     'cupo_maximo' => $c->cupo_maximo,
                     'inscritos' => $inscripciones->count(),
-                    'cupos_disponibles' => $c->cupo_maximo ? max($c->cupo_maximo - $inscripciones->count(), 0) : null,
+                    'cupos_disponibles' => $c->cupo_maximo
+                        ? max($c->cupo_maximo - $inscripciones->count(), 0)
+                        : null,
                     'costo_inscripcion' => number_format($c->costo_inscripcion, 0, ',', '.'),
                     'deportistas' => $inscripciones->map(fn($i) => [
-                        'nombre' => optional($i->deportista->usuario)->nombre.' '.optional($i->deportista->usuario)->apellido,
+                        'nombre' => optional($i->deportista->usuario)->nombre . ' ' . optional($i->deportista->usuario)->apellido,
                         'club' => optional($i->deportista->club)->nombre,
                         'elo' => $i->deportista->elo_nacional,
                         'fide_id' => $i->deportista->fide_id,
-                        'estado_pago' => optional($i->estadoInscripcion)->nombre
-                    ])
+                        'estado_pago' => optional($i->estadoInscripcion)->nombre,
+                    ]),
                 ];
-            })
+            }),
+        ]);
+    }
+
+    public function confirmarAsistencia(int $id)
+    {
+        $evento = Evento::whereHas('tipoEvento', fn($q) =>
+            $q->where('nombre', '!=', 'Torneo')
+        )->find($id);
+
+        if (!$evento) {
+            return response()->json([
+                'message' => 'Evento no encontrado'
+            ], 404);
+        }
+
+        $usuarioId = auth()->id();
+
+        $query = $evento->asistencias()
+            ->where('usuario_id', $usuarioId);
+
+        if ($query->exists()) {
+            $query->delete();
+            $asistira = false;
+        } else {
+            $evento->asistencias()->create([
+                'usuario_id' => $usuarioId
+            ]);
+            $asistira = true;
+        }
+
+        return response()->json([
+            'asistira' => $asistira,
+            'total_asistentes' => $evento->asistencias()->count(),
+        ]);
+    }
+
+    public function confirmarInscripcion(ConfirmarInscripcionRequest $request, int $id)
+    {
+        return new InscripcionResource(
+            $this->eventoService->confirmarInscripcion(
+                $id,
+                $request->validated(),
+                auth()->user()
+            )
+        );
+    }
+
+    public function cancelarInscripcion(int $id)
+    {
+        $this->eventoService->cancelarInscripcion($id, auth()->user());
+
+        return response()->json([
+            'message' => 'La inscripción fue cancelada correctamente.'
         ]);
     }
 }

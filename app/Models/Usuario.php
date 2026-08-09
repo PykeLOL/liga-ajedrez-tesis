@@ -111,4 +111,9 @@ class Usuario extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Solicitud::class, 'usuario_id');
     }
+
+    public function entrenamientoGoogleEvents()
+    {
+        return $this->hasMany(EntrenamientoGoogleEvent::class);
+    }
 }

@@ -47,6 +47,7 @@ class DatabaseSeeder extends Seeder
             PaisSeeder::class,
             DepartamentoSeeder::class,
             MunicipioSeeder::class,
+            TipoNotificacionSeeder::class,
         ]);
     }
 }

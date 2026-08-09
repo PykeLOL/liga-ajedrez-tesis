@@ -79,6 +79,12 @@ class Evento extends Model
         return $this->hasMany(EventoInscripcion::class);
     }
 
+    public function inscripcionesActivas()
+    {
+        return $this->hasMany(EventoInscripcion::class)
+            ->where('estado_inscripcion_id', '!=', EstadoInscripcion::CANCELADO);
+    }
+
     public function redesSociales()
     {
         return $this->hasMany(EventoRedSocial::class);

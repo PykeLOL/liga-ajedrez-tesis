@@ -16,7 +16,8 @@ class TipoEvento extends Model
         'nombre',
         'abreviacion',
         'descripcion',
-        'slug'
+        'slug',
+        'icono'
     ];
 
     public $timestamps = true;

@@ -9,26 +9,70 @@ use App\Models\Estado;
 use App\Models\Titulo;
 use App\Models\Usuario;
 use App\Models\Solicitud;
+use App\Models\ClubMedia;
 use App\Models\Categoria;
 use App\Models\Deportista;
 use Illuminate\Http\Request;
 use App\Models\SolicitudClub;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Services\NotificacionDomainService;
 
 class SolicitudController extends Controller
 {
-    public function index()
+    protected NotificacionDomainService $notificacionDomainService;
+
+    public function __construct(NotificacionDomainService $notificacionDomainService)
     {
-        $solicitudes = Solicitud::with('usuario', 'club', 'deportista')->get();
-        return response()->json($solicitudes);
+        $this->notificacionDomainService = $notificacionDomainService;
     }
 
-    public function show($id)
+    public function index()
     {
-        $solicitud = Solicitud::with('usuario', 'club', 'deportista')->findOrFail($id);
-        return response()->json($solicitud);
+        return response()->json(
+            $this->querySolicitudes()->get()
+        );
+    }
+
+    public function show(int $id)
+    {
+        return response()->json(
+            $this->querySolicitudes()->findOrFail($id)
+        );
+    }
+
+    private function querySolicitudes()
+    {
+        $usuario = auth()->user();
+        $rol = $usuario->rol->nombre;
+
+        $query = Solicitud::with([
+            'usuario',
+            'club',
+            'club.municipio',
+            'club.municipio.departamento',
+            'deportista',
+            'deportista.club',
+            'deportista.genero',
+            'deportista.nacionalidad',
+        ]);
+
+        if (in_array($rol, ['Admin', 'Presidente Liga'])) {
+            return $query;
+        }
+
+        if ($rol === 'Presidente Club') {
+            $clubId = Club::where('presidente_id', $usuario->id)->value('id');
+
+            return $query
+                ->where('tipo', Solicitud::TIPO_DEPORTISTA)
+                ->whereHas('deportista', fn($q) => $q->where('club_id', $clubId));
+        }
+
+        abort(403, 'No tienes permiso para consultar las solicitudes.');
     }
 
     public function actualizarEstado(Request $request, $id)
@@ -42,92 +86,139 @@ class SolicitudController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $solicitud = Solicitud::findOrFail($id);
-        if($solicitud->estado !== Solicitud::ESTADO_PENDIENTE) {
-            return response()->json(['message' => 'Solo se pueden actualizar solicitudes en estado pendiente'], 400);
-        }
+        DB::beginTransaction();
 
-        $solicitud->estado = $request->estado;
-        $solicitud->comentario = $request->comentario;
-        $solicitud->save();
+        try {
+            $solicitud = Solicitud::findOrFail($id);
 
-        if($request->estado === Solicitud::ESTADO_APROBADA) {
-            if($solicitud->tipo === Solicitud::TIPO_CLUB) {
-                $club = Club::create([
-                    'liga_id' => $solicitud->club->liga_id,
-                    'nombre' => $solicitud->club->nombre,
-                    'ubicacion' => $solicitud->club->municipio->nombre . ', ' . $solicitud->club->municipio->departamento->nombre,
-                    'direccion' => $solicitud->club->direccion,
-                    'descripcion' => $solicitud->club->descripcion,
-                    'logo' => $solicitud->club->imagen_path,
-                    'presidente_id' => $solicitud->usuario_id,
-                    'estado_id' => Estado::ACTIVO,
-                ]);
-                Storage::disk('public')->move($solicitud->club->documento_path, "clubes/{$club->id}/documento.pdf");
-                $club->documento_path = "clubes/{$club->id}/documento.pdf";
-                $club->save();
+            if ($solicitud->estado !== Solicitud::ESTADO_PENDIENTE) {
+                return response()->json(['message' => 'Solo se pueden actualizar solicitudes en estado pendiente'], 400);
+            }
 
-                $rolPresidenteClub = Rol::where('nombre', 'Presidente Club')->first();
-                $usuario = Usuario::find($solicitud->usuario_id);
-                $usuario->rol_id = $rolPresidenteClub->id;
-                $usuario->save();
-            } elseif($solicitud->tipo === Solicitud::TIPO_DEPORTISTA) {
-                $edad = Carbon::parse($solicitud->deportista->fecha_nacimiento)->age;
-                $categoria = Categoria::where('nombre', '!=', 'Libre')
-                    ->where('edad_minima', '<=', $edad)
-                    ->where('edad_maxima', '>=', $edad)
-                    ->first();
+            $solicitud->estado = $request->estado;
+            $solicitud->comentario = $request->comentario;
+            $solicitud->save();
 
-                $tituloId = Titulo::where('abreviacion', 'ST')->value('id');
-                if($solicitud->deportista->fide_id) {
-                    $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$solicitud->deportista->fide_id}&history=true";
-                    $response = Http::get($url);
-                    if (!$response->successful()) {
-                        return response()->json([
-                            'message' => 'No se encontró información en FIDE'
-                        ], 404);
+            if($request->estado === Solicitud::ESTADO_APROBADA) {
+                if($solicitud->tipo === Solicitud::TIPO_CLUB) {
+                    $club = Club::create([
+                        'liga_id' => $solicitud->club->liga_id,
+                        'nombre' => $solicitud->club->nombre,
+                        'ubicacion' => $solicitud->club->municipio->nombre . ', ' . $solicitud->club->municipio->departamento->nombre,
+                        'direccion' => $solicitud->club->direccion,
+                        'descripcion' => $solicitud->club->descripcion,
+                        'presidente_id' => $solicitud->usuario_id,
+                        'contacto' => $solicitud->usuario->email,
+                        'estado_id' => Estado::ACTIVO,
+                    ]);
+
+                    $nombreArchivo = basename($solicitud->club->documento_path);
+
+                    Storage::disk('public')->copy($solicitud->club->documento_path, "clubes/{$club->id}/{$nombreArchivo}");
+                    $club->documento_path = "clubes/{$club->id}/{$nombreArchivo}";
+
+                    Log::info('$solicitud->club->imagen_path:' . json_encode($solicitud->club->imagen_path));
+                    $nombreImagen = basename($solicitud->club->imagen_path);
+
+                    Storage::disk('public')->copy($solicitud->club->imagen_path, "clubes/{$club->id}/logo/{$nombreImagen}");
+                    $club->logo = "clubes/{$club->id}/logo/{$nombreImagen}";
+                    $club->save();
+
+                    $mediaPath = "clubes/media/club_{$club->id}/{$nombreImagen}";
+                    Storage::disk('public')->copy($solicitud->club->imagen_path, $mediaPath);
+
+                    ClubMedia::create([
+                        'club_id' => $club->id,
+                        'tipo' => 'imagen',
+                        'path' => $mediaPath,
+                        'orden' => 1,
+                        'descripcion' => null,
+                    ]);
+
+                    $rolPresidenteClub = Rol::where('nombre', 'Presidente Club')->first();
+                    $usuario = Usuario::find($solicitud->usuario_id);
+                    $usuario->rol_id = $rolPresidenteClub->id;
+                    $usuario->save();
+                } elseif($solicitud->tipo === Solicitud::TIPO_DEPORTISTA) {
+                    $edad = Carbon::parse($solicitud->deportista->fecha_nacimiento)->age;
+                    $categoria = Categoria::where('nombre', '!=', 'Libre')
+                        ->where('edad_minima', '<=', $edad)
+                        ->where('edad_maxima', '>=', $edad)
+                        ->first();
+
+                    $classical = 0;
+                    $rapid = 0;
+                    $blitz = 0;
+
+                    $eloMasAlto = max($classical, $rapid, $blitz);
+                    $tituloId = Titulo::where('abreviacion', 'ST')->value('id');
+
+                    if ($solicitud->deportista->fide_id) {
+                        try {
+                            $url = env('API_CHESSTOOLS_URL') . "/fide/player/{$solicitud->deportista->fide_id}";
+                            $response = Http::timeout(1)->get($url);
+
+                            if ($response->successful()) {
+                                $data = $response->json();
+
+                                $standard = $data['standard'] ?? 0;
+                                $rapid = $data['rapid'] ?? 0;
+                                $blitz = $data['blitz'] ?? 0;
+
+                                $eloMasAlto = max($standard, $rapid, $blitz);
+
+                                $tituloId = Titulo::where('abreviacion', $data['title'] ?? null)
+                                    ->value('id') ?? $tituloId;
+                            }
+                        } catch (\Throwable $e) {
+                            // La API está caída o no responde.
+                            // Se usan los valores por defecto.
+                        }
                     }
 
-                    $data = $response->json();
-                    $history = $data['history'][0] ?? [];
-                    $classical = $history['classical_rating'] ?? 0;
-                    $rapid = $history['rapid_rating'] ?? 0;
-                    $blitz = $history['blitz_rating'] ?? 0;
-                    $eloMasAlto = max($classical, $rapid, $blitz);
-                    $tituloId = Titulo::where('nombre_fide', $data['fide_title'] ?? null)
-                        ->value('id')
-                        ?? Titulo::where('abreviacion', 'ST')->value('id');
+                    $deportista = Deportista::create([
+                        'usuario_id' => $solicitud->usuario_id,
+                        'club_id' => $solicitud->deportista->club_id ?? null,
+                        'categoria_id' => $categoria ? $categoria->id : null,
+                        'fecha_nacimiento' => $solicitud->deportista->fecha_nacimiento,
+                        'genero_id' => $solicitud->deportista->genero_id,
+                        'nacionalidad_id' => $solicitud->deportista->nacionalidad_id,
+                        'elo_nacional' => $eloMasAlto ?? 0,
+                        'elo_internacional' => $eloMasAlto ?? 0,
+                        'fide_id' => $solicitud->deportista->fide_id ?? null,
+                        'titulo_id' => $tituloId,
+                        'estado' => true,
+                    ]);
+
+                    $nombreArchivo = basename($solicitud->deportista->documento_path);
+
+                    Storage::disk('public')->copy($solicitud->deportista->documento_path, "deportistas/{$deportista->id}/{$nombreArchivo}");
+                    $deportista->documento_path = "deportistas/{$deportista->id}/{$nombreArchivo}";
+                    $deportista->save();
+
+                    $rolDeportista = Rol::where('nombre', 'Deportista')->first();
+                    $usuario = Usuario::find($solicitud->usuario_id);
+                    $usuario->rol_id = $rolDeportista->id;
+                    $usuario->save();
                 }
-
-                $deportista = Deportista::create([
-                    'usuario_id' => $solicitud->usuario_id,
-                    'club_id' => $solicitud->deportista->club_id ?? null,
-                    'categoria_id' => $categoria ? $categoria->id : null,
-                    'fecha_nacimiento' => $solicitud->deportista->fecha_nacimiento,
-                    'genero_id' => $solicitud->deportista->genero_id,
-                    'nacionalidad_id' => $solicitud->deportista->nacionalidad_id,
-                    'elo_nacional' => $eloMasAlto ?? 0,
-                    'elo_internacional' => $eloMasAlto ?? 0,
-                    'fide_id' => $solicitud->deportista->fide_id ?? null,
-                    'titulo_id' => $tituloId,
-                    'estado' => true,
-                ]);
-
-                Storage::disk('public')->move($solicitud->deportista->documento_path, "deportistas/{$deportista->id}/documento.pdf");
-                $deportista->documento_path = "deportistas/{$deportista->id}/documento.pdf";
-                $deportista->save();
-
-                $rolDeportista = Rol::where('nombre', 'Deportista')->first();
-                $usuario = Usuario::find($solicitud->usuario_id);
-                $usuario->rol_id = $rolDeportista->id;
-                $usuario->save();
+                $solicitud->load('usuario');
+                $this->notificacionDomainService->solicitudAprobada($solicitud);
+            } else {
+                $solicitud->load('usuario');
+                $this->notificacionDomainService->solicitudRechazada($solicitud);
             }
-        }
 
-        return response()->json([
-            'message' => 'Solicitud actualizada exitosamente',
-            'solicitud' => $solicitud
-        ], 201);
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Solicitud actualizada exitosamente',
+                'solicitud' => $solicitud
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function misSolicitudes()
@@ -187,6 +278,13 @@ class SolicitudController extends Controller
             'documento_path' => $path,
         ]);
 
+        $solicitudBase = Solicitud::with([
+            'usuario',
+            'club.liga.presidente'
+        ])->find($solicitud->solicitud_id);
+
+        $this->notificacionDomainService->solicitudClubCreada($solicitudBase);
+
         return response()->json([
             'message' => 'Solicitud de Club creada exitosamente',
             'solicitud' => $solicitud
@@ -229,7 +327,6 @@ class SolicitudController extends Controller
             'estado' => Solicitud::ESTADO_PENDIENTE,
         ]);
 
-        $eloMasAlto = 0;
         $tituloId = Titulo::where('abreviacion', 'ST')->value('id');
 
         $solicitud->deportista()->create([
@@ -241,6 +338,13 @@ class SolicitudController extends Controller
             'titulo_id' => $tituloId,
             'documento_path' => $path,
         ]);
+
+        $solicitud = $solicitud->load([
+            'usuario',
+            'deportista.club.presidente'
+        ]);
+
+        $this->notificacionDomainService->solicitudDeportistaCreada($solicitud);
 
         return response()->json([
             'message' => 'Solicitud de Deportista creada exitosamente',

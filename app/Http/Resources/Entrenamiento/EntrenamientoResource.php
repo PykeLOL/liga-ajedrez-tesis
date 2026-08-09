@@ -65,7 +65,6 @@ class EntrenamientoResource extends JsonResource
 
             'ubicacion' => $this->ubicacion,
             'url_mapa' => $this->url_mapa,
-            'google_event_id' => $this->google_event_id,
 
             'deportistas' => $this->deportistas->map(function ($deportista) {
                 return [

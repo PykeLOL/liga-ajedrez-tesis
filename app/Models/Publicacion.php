@@ -33,7 +33,7 @@ class Publicacion extends Model
 
     public function usuario()
     {
-        return $this->belongsTo(User::class, 'usuario_id');
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
     public function media()
@@ -44,5 +44,10 @@ class Publicacion extends Model
     public function comentarios()
     {
         return $this->hasMany(PublicacionComentario::class, 'publicacion_id');
+    }
+
+    public function reacciones()
+    {
+        return $this->hasMany(PublicacionReaccion::class, 'publicacion_id');
     }
 }

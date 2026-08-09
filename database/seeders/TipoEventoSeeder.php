@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\TipoEvento;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class TipoEventoSeeder extends Seeder
 {
@@ -19,13 +18,23 @@ class TipoEventoSeeder extends Seeder
             [
                 'nombre' => 'Torneo',
                 'abreviacion' => 'TOR',
+                'icono' => 'bi-trophy-fill',
                 'descripcion' => 'Competencias formales de ajedrez.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nombre' => 'Noticia',
+                'abreviacion' => 'NOT',
+                'icono' => 'bi-newspaper',
+                'descripcion' => 'Noticias de la Liga.',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
                 'nombre' => 'Reunión',
                 'abreviacion' => 'REU',
+                'icono' => 'bi-people-fill',
                 'descripcion' => 'Reuniones de socios o miembros de la liga.',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -33,6 +42,7 @@ class TipoEventoSeeder extends Seeder
             [
                 'nombre' => 'Convocatoria',
                 'abreviacion' => 'CVC',
+                'icono' => 'bi-megaphone-fill',
                 'descripcion' => 'Convocatorias para eventos o competencias.',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -40,6 +50,7 @@ class TipoEventoSeeder extends Seeder
             [
                 'nombre' => 'Festival',
                 'abreviacion' => 'FES',
+                'icono' => 'bi-stars',
                 'descripcion' => 'Eventos recreativos y competitivos mixtos.',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -47,6 +58,7 @@ class TipoEventoSeeder extends Seeder
             [
                 'nombre' => 'Simultánea',
                 'abreviacion' => 'SIM',
+                'icono' => 'bi-person-video3',
                 'descripcion' => 'Exhibiciones simultáneas de ajedrez.',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -54,6 +66,7 @@ class TipoEventoSeeder extends Seeder
             [
                 'nombre' => 'Capacitación',
                 'abreviacion' => 'CAP',
+                'icono' => 'bi-mortarboard-fill',
                 'descripcion' => 'Cursos, talleres o charlas de formación.',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -61,6 +74,7 @@ class TipoEventoSeeder extends Seeder
             [
                 'nombre' => 'Otro',
                 'abreviacion' => 'OTR',
+                'icono' => 'bi-grid-3x3-gap-fill',
                 'descripcion' => 'Eventos no clasificados.',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -68,7 +82,10 @@ class TipoEventoSeeder extends Seeder
         ];
 
         foreach ($tipos as $tipo) {
-            TipoEvento::firstOrCreate(['nombre' => $tipo['nombre']], $tipo);
+            TipoEvento::updateOrCreate(
+                ['nombre' => $tipo['nombre']],
+                $tipo
+            );
         }
     }
 }

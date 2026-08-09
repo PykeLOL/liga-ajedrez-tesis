@@ -32,7 +32,6 @@ class CreateEntrenamientosTable extends Migration
             $table->foreignId('evento_id')->nullable()->constrained('eventos')->nullOnDelete();
             $table->foreignId('estado_entrenamiento_id')->constrained('estados_entrenamiento');
             $table->boolean('generado_automaticamente')->default(false);
-            $table->string('google_event_id')->nullable();
 
             $table->unique([
                 'plan_entrenamiento_id',

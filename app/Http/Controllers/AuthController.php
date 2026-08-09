@@ -51,7 +51,7 @@ class AuthController extends Controller
             'message' => 'Inicio de sesión exitoso',
             'user' => [
                 'id'     => $user->id,
-                'nombre' => $user->nombre ?? $user->name,
+                'nombre' => $user->nombre . ' ' . $user->apellido,
                 'email'  => $user->email,
                 'rol'    => $user->rol ? $user->rol->nombre : 'Sin rol',
                 'imagen_path' => $user->imagen_path,

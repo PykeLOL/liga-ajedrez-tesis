@@ -7,6 +7,7 @@ use App\Models\Titulo;
 use App\Models\Usuario;
 use App\Models\Categoria;
 use App\Models\Deportista;
+use App\Traits\FiltraPorRol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -15,9 +16,20 @@ use Illuminate\Support\Facades\Validator;
 
 class DeportistaController extends Controller
 {
+    use FiltraPorRol;
+
     public function index()
     {
-        $deportistas = Deportista::with(['genero', 'usuario', 'club', 'categoria', 'nacionalidad', 'usuario.tipoIdentificacion', 'titulo'])->get();
+        $deportistas = $this->filtrarPorClub(Deportista::with([
+            'genero',
+            'usuario',
+            'club',
+            'categoria',
+            'nacionalidad',
+            'usuario.tipoIdentificacion',
+            'titulo'
+        ]))->get();
+
         $deportistas = $deportistas->map(function ($deportista) {
             return [
                 'id' => $deportista->id,
@@ -59,15 +71,25 @@ class DeportistaController extends Controller
         return response()->json($deportistas);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
-        $deportista = Deportista::with(['genero', 'usuario', 'club', 'categoria', 'nacionalidad', 'usuario.tipoIdentificacion', 'titulo'])
-            ->where('id', $id)
-            ->first();
+        $deportista = $this->filtrarPorClub(Deportista::with([
+            'genero',
+            'usuario',
+            'club',
+            'categoria',
+            'nacionalidad',
+            'usuario.tipoIdentificacion',
+            'titulo'
+        ]))->find($id);
+
         if (!$deportista) {
-            return response()->json(['message' => 'Deportista no encontrado'], 404);
+            return response()->json([
+                'message' => 'Deportista no encontrado'
+            ], 404);
         }
-        return response()->json($deportista, 200);
+
+        return response()->json($deportista);
     }
 
     public function store(Request $request)
@@ -141,9 +163,9 @@ class DeportistaController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
-        $deportista = Deportista::find($id);
+        $deportista = $this->filtrarPorClub(Deportista::query())->find($id);
         if (!$deportista) {
             return response()->json([
                 'message' => 'Deportista no encontrado'
@@ -206,9 +228,9 @@ class DeportistaController extends Controller
         ], 200);
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
-        $deportista = Deportista::find($id);
+        $deportista = $this->filtrarPorClub(Deportista::query())->find($id);
         if (!$deportista) {
             return response()->json(['message' => 'Deportista no encontrado'], 404);
         }
@@ -218,7 +240,7 @@ class DeportistaController extends Controller
         return response()->json(['message' => 'Deportista eliminado correctamente'], 200);
     }
 
-    public function actualizarCategoria($id)
+    public function actualizarCategoria(int $id)
     {
         $deportista = Deportista::find($id);
         if (!$deportista) {
@@ -245,9 +267,9 @@ class DeportistaController extends Controller
         ], 200);
     }
 
-    public function sincronizarFide($fideId)
+    public function sincronizarFide(int $fideId)
     {
-        $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
+        $url = env('API_CHESSTOOLS_URL') . "/fide/player/$fideId";
         $response = Http::get($url);
         if (!$response->successful()) {
             return response()->json([
@@ -256,12 +278,12 @@ class DeportistaController extends Controller
         }
 
         $data = $response->json();
-        $history = $data['history'][0] ?? [];
-        $classical = $history['classical_rating'] ?? 0;
-        $rapid = $history['rapid_rating'] ?? 0;
-        $blitz = $history['blitz_rating'] ?? 0;
-        $eloMasAlto = max($classical, $rapid, $blitz);
-        $tituloId = Titulo::where('nombre_fide', $data['fide_title'] ?? null)
+        $standard = $data['standard'] ?? 0;
+        $rapid = $data['rapid'] ?? 0;
+        $blitz = $data['blitz'] ?? 0;
+
+        $eloMasAlto = max($standard, $rapid, $blitz);
+        $tituloId = Titulo::where('abreviacion', $data['title'] ?? null)
             ->value('id')
             ?? Titulo::where('abreviacion', 'ST')->value('id');
 
@@ -310,7 +332,7 @@ class DeportistaController extends Controller
         });
     }
 
-    public function showPublic($id)
+    public function showPublic(int $id)
     {
         $deportista = Deportista::with(['genero', 'usuario', 'club', 'categoria', 'nacionalidad', 'usuario.tipoIdentificacion', 'titulo'])->findOrFail($id);
         return response()->json([
@@ -335,5 +357,303 @@ class DeportistaController extends Controller
                 'logo' => $deportista->club->liga->logo ? '/storage/'.$deportista->club->liga->logo : null,
             ],
         ]);
+    }
+
+    public function miElo()
+    {
+        $usuario = auth()->user();
+        $deportista = Deportista::with([
+            'usuario',
+            'club',
+            'titulo',
+            'categoria',
+            'genero',
+            'nacionalidad',
+        ])->where('usuario_id', $usuario->id)->first();
+
+        if (!$deportista) {
+            return response()->json([
+                'message' => 'El usuario no tiene un deportista asociado.'
+            ], 404);
+        }
+
+        if (!$deportista->fide_id) {
+            return response()->json([
+                'message' => 'El deportista no tiene un FIDE ID asociado.'
+            ], 404);
+        }
+
+        [$playerResponse, $ratingsResponse] = Http::pool(function ($pool) use ($deportista) {
+            return [
+                $pool->get(env('API_CHESSTOOLS_URL') . "/fide/player/{$deportista->fide_id}"),
+                $pool->get(env('API_CHESSTOOLS_URL') . "/fide/player/{$deportista->fide_id}/ratings"),
+            ];
+        });
+
+        if (!$playerResponse->successful() || !$ratingsResponse->successful()) {
+            return response()->json([
+                'message' => 'Error al consultar la información FIDE.'
+            ], 500);
+        }
+
+        $player = $playerResponse->json();
+        $ratings = $ratingsResponse->json();
+
+        $historial = $this->formatearHistorial($ratings);
+
+        return response()->json([
+            'usuario' => [
+                'id' => $usuario->id,
+                'nombre' => $usuario->nombre,
+                'apellido' => $usuario->apellido,
+                'foto_perfil' => $usuario->imagen_path
+                    ? '/storage/' . $usuario->imagen_path
+                    : asset('img/usuarios/default.jpg'),
+                'edad' => Carbon::parse($deportista->fecha_nacimiento)->age,
+            ],
+
+            'club' => [
+                'id' => optional($deportista->club)->id,
+                'nombre' => optional($deportista->club)->nombre ?? 'Sin club',
+            ],
+
+            'deportista' => [
+                'fide_id' => $deportista->fide_id,
+                'titulo' => optional($deportista->titulo)->nombre ?? 'Sin título',
+                'elo_nacional' => $deportista->elo_nacional,
+                'elo_internacional' => $deportista->elo_internacional,
+                'categoria' => optional($deportista->categoria)->nombre,
+                'genero' => optional($deportista->genero)->nombre,
+                'nacionalidad' => optional($deportista->nacionalidad)->nombre,
+            ],
+
+            'elo_actual' => [
+                'standard' => $player['standard'] ?? null,
+                'rapid' => $player['rapid'] ?? null,
+                'blitz' => $player['blitz'] ?? null,
+            ],
+
+            'historial' => $historial,
+        ]);
+    }
+
+    private function formatearHistorial(array $ratings): array
+    {
+        $historial = [];
+        foreach (['standard', 'rapid', 'blitz'] as $tipo) {
+            foreach ($ratings[$tipo] ?? [] as $valor) {
+                $valor = str_pad((string)$valor, 10, '0', STR_PAD_LEFT);
+                $historial[] = [
+                    'tipo' => $tipo,
+                    'anio' => substr($valor, 0, 4),
+                    'mes'  => substr($valor, 4, 2),
+                    'elo'  => (int) substr($valor, 6),
+                ];
+            }
+        }
+
+        usort($historial, function ($a, $b) {
+            $fechaA = $a['anio'] . $a['mes'];
+            $fechaB = $b['anio'] . $b['mes'];
+            return strcmp($fechaB, $fechaA);
+        });
+
+        return $historial;
+    }
+
+    public function eloDeportista(int $id)
+    {
+        $deportista = Deportista::with([
+            'usuario',
+            'club',
+            'titulo',
+            'categoria',
+            'genero',
+            'nacionalidad',
+        ])->where('id', $id)->first();
+
+        if (!$deportista) {
+            return response()->json([
+                'message' => 'El usuario no tiene un deportista asociado.'
+            ], 404);
+        }
+
+        if (!$deportista->fide_id) {
+            return response()->json([
+                'message' => 'El deportista no tiene un FIDE ID asociado.'
+            ], 404);
+        }
+
+        $usuario = Usuario::find($deportista->usuario_id);
+
+        [$playerResponse, $ratingsResponse] = Http::pool(function ($pool) use ($deportista) {
+            return [
+                $pool->get(env('API_CHESSTOOLS_URL') . "/fide/player/{$deportista->fide_id}"),
+                $pool->get(env('API_CHESSTOOLS_URL') . "/fide/player/{$deportista->fide_id}/ratings"),
+            ];
+        });
+
+        if (!$playerResponse->successful() || !$ratingsResponse->successful()) {
+            return response()->json([
+                'message' => 'Error al consultar la información FIDE.'
+            ], 500);
+        }
+
+        $player = $playerResponse->json();
+        $ratings = $ratingsResponse->json();
+
+        $historial = $this->formatearHistorial($ratings);
+
+        return response()->json([
+            'usuario' => [
+                'id' => $usuario->id,
+                'nombre' => $usuario->nombre,
+                'apellido' => $usuario->apellido,
+                'foto_perfil' => $usuario->imagen_path
+                    ? '/storage/' . $usuario->imagen_path
+                    : asset('img/usuarios/default.jpg'),
+                'edad' => Carbon::parse($deportista->fecha_nacimiento)->age,
+            ],
+
+            'club' => [
+                'id' => optional($deportista->club)->id,
+                'nombre' => optional($deportista->club)->nombre ?? 'Sin club',
+            ],
+
+            'deportista' => [
+                'fide_id' => $deportista->fide_id,
+                'titulo' => optional($deportista->titulo)->nombre ?? 'Sin título',
+                'elo_nacional' => $deportista->elo_nacional,
+                'elo_internacional' => $deportista->elo_internacional,
+                'categoria' => optional($deportista->categoria)->nombre,
+                'genero' => optional($deportista->genero)->nombre,
+                'nacionalidad' => optional($deportista->nacionalidad)->nombre,
+            ],
+
+            'elo_actual' => [
+                'standard' => $player['standard'] ?? null,
+                'rapid' => $player['rapid'] ?? null,
+                'blitz' => $player['blitz'] ?? null,
+            ],
+
+            'historial' => $historial,
+        ]);
+    }
+
+    public function rankingElo()
+    {
+        $deportistas = Deportista::with([
+            'usuario',
+            'club',
+            'titulo'
+        ])
+        ->where('estado', true)
+        ->whereNotNull('fide_id')
+        ->get();
+
+        $ranking = [];
+
+        foreach ($deportistas as $deportista) {
+
+            try {
+                $response = Http::get(
+                    env('API_CHESSTOOLS_URL') . "/fide/player/{$deportista->fide_id}"
+                );
+
+                if (!$response->successful()) {
+                    continue;
+                }
+
+                $player = $response->json();
+
+                $ranking[] = [
+                    'id' => $deportista->id,
+                    'nombre' => trim($deportista->usuario->nombre . ' ' . $deportista->usuario->apellido),
+                    'foto_perfil' => $deportista->usuario->imagen_path
+                        ? '/storage/' . $deportista->usuario->imagen_path
+                        : null,
+                    'titulo' => optional($deportista->titulo)->abreviacion
+                        ?? optional($deportista->titulo)->nombre
+                        ?? 'ST',
+
+                    'club_id' => optional($deportista->club)->id,
+                    'club' => optional($deportista->club)->nombre ?? 'Sin club',
+
+                    'elo_standard' => $player['standard'] ?? 0,
+                    'elo_rapid' => $player['rapid'] ?? 0,
+                    'elo_blitz' => $player['blitz'] ?? 0,
+                ];
+
+            } catch (\Throwable $e) {
+                Log::warning("Error consultando FIDE {$deportista->fide_id}: ".$e->getMessage());
+            }
+        }
+
+        usort($ranking, fn($a, $b) => $b['elo_standard'] <=> $a['elo_standard']);
+
+        foreach ($ranking as $i => &$jugador) {
+            $jugador['posicion'] = $i + 1;
+        }
+
+        return response()->json($ranking);
+    }
+
+    public function rankingEloHome()
+    {
+        $perPage = 4;
+        $deportistas = Deportista::with([
+            'usuario',
+            'club',
+            'titulo'
+        ])
+        ->where('estado', true)
+        ->whereNotNull('fide_id')
+        ->paginate($perPage);
+
+        $ranking = [];
+
+        foreach ($deportistas as $deportista) {
+
+            try {
+                $response = Http::get(
+                    env('API_CHESSTOOLS_URL') . "/fide/player/{$deportista->fide_id}"
+                );
+
+                if (!$response->successful()) {
+                    continue;
+                }
+
+                $player = $response->json();
+
+                $ranking[] = [
+                    'id' => $deportista->id,
+                    'nombre' => trim($deportista->usuario->nombre . ' ' . $deportista->usuario->apellido),
+                    'foto_perfil' => $deportista->usuario->imagen_path
+                        ? '/storage/' . $deportista->usuario->imagen_path
+                        : null,
+                    'titulo' => optional($deportista->titulo)->abreviacion
+                        ?? optional($deportista->titulo)->nombre
+                        ?? 'ST',
+
+                    'club_id' => optional($deportista->club)->id,
+                    'club' => optional($deportista->club)->nombre ?? 'Sin club',
+
+                    'elo_standard' => $player['standard'] ?? 0,
+                    'elo_rapid' => $player['rapid'] ?? 0,
+                    'elo_blitz' => $player['blitz'] ?? 0,
+                ];
+
+            } catch (\Throwable $e) {
+                Log::warning("Error consultando FIDE {$deportista->fide_id}: ".$e->getMessage());
+            }
+        }
+
+        usort($ranking, fn($a, $b) => $b['elo_standard'] <=> $a['elo_standard']);
+
+        foreach ($ranking as $i => &$jugador) {
+            $jugador['posicion'] = $i + 1;
+        }
+
+        return response()->json($ranking);
     }
 }

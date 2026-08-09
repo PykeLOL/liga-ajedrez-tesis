@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Club;
 use App\Models\ClubMedia;
 use Illuminate\Http\Request;
+use App\Traits\FiltraPorRol;
 use App\Models\ClubRedSocial;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Validator;
 
 class ClubController extends Controller
 {
+    use FiltraPorRol;
+
     public function index()
     {
         $clubes = Club::with('presidente')->get();
@@ -33,7 +36,7 @@ class ClubController extends Controller
         return response()->json($clubes);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
         $club = Club::with(['liga', 'presidente', 'media', 'redesSociales'])
             ->where('id', $id)
@@ -152,12 +155,14 @@ class ClubController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         $club = Club::find($id);
         if (!$club) {
             return response()->json(['message' => 'Club no encontrado'], 404);
         }
+
+        $this->validarClubPropio($club);
 
         $validator = Validator::make($request->all(), [
             'nombre' => 'required|string|max:255',
@@ -322,6 +327,8 @@ class ClubController extends Controller
             return response()->json(['message' => 'Club no encontrado'], 404);
         }
 
+        $this->validarClubPropio($club);
+
         $club->delete();
 
         return response()->json(['message' => 'Club eliminado correctamente'], 200);
@@ -330,6 +337,23 @@ class ClubController extends Controller
     public function indexHome(Request $request)
     {
         $perPage = $request->get('per_page', 10);
+        $clubes = Club::with(['liga', 'presidente'])
+            ->paginate($perPage);
+
+        return response()->json([
+            'data' => $this->mapClubes($clubes->getCollection()),
+            'meta' => [
+                'current_page' => $clubes->currentPage(),
+                'last_page' => $clubes->lastPage(),
+                'per_page' => $clubes->perPage(),
+                'total' => $clubes->total(),
+            ]
+        ]);
+    }
+
+    public function indexHomeHome(Request $request)
+    {
+        $perPage = $request->get('per_page', 4);
         $clubes = Club::with(['liga', 'presidente'])
             ->paginate($perPage);
 

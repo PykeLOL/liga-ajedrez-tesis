@@ -12,27 +12,11 @@ class ReaccionSeeder extends Seeder
         $reacciones = [
             [
                 'nombre' => 'Me gusta',
-                'icono' => 'hand-thumbs-up',
+                'icono' => 'hand-thumbs-up-fill',
             ],
             [
                 'nombre' => 'No me gusta',
-                'icono' => 'hand-thumbs-down',
-            ],
-            [
-                'nombre' => 'Me encanta',
-                'icono' => 'heart',
-            ],
-            [
-                'nombre' => 'Me divierte',
-                'icono' => 'emoji-laughing',
-            ],
-            [
-                'nombre' => 'Me sorprende',
-                'icono' => 'emoji-surprise',
-            ],
-            [
-                'nombre' => 'Me entristece',
-                'icono' => 'emoji-frown',
+                'icono' => 'hand-thumbs-down-fill',
             ],
         ];
 

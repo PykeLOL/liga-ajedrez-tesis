@@ -9,25 +9,33 @@ use Illuminate\Support\Facades\Http;
 
 class ChesstoolsController extends Controller
 {
-    public function show($fideId)
+    public function show(int $fideId)
     {
-        $url = env('API_CHESSTOOLS_URL') . "/fide/player_info/?fide_id={$fideId}&history=true";
-        $response = Http::get($url);
-        if (!$response->successful()) {
+        [$playerResponse, $ratingsResponse] = Http::pool(function ($pool) use ($fideId) {
+            return [
+                $pool->get(env('API_CHESSTOOLS_URL') . "/fide/player/$fideId"),
+                $pool->get(env('API_CHESSTOOLS_URL') . "/fide/player/$fideId/ratings"),
+            ];
+        });
+
+        if (!$playerResponse->successful() || !$ratingsResponse->successful()) {
             return response()->json([
                 'message' => 'Error al consultar API externa'
             ], 500);
         }
 
-        $data = $response->json();
+        $data = $playerResponse->json();
+        $dataHistorial = $ratingsResponse->json();
+
+        $historial = $this->formatearHistorial($dataHistorial);
         $dataDeportista = Deportista::where('fide_id', $fideId)->first();
         if (!$dataDeportista) {
             $deportista = [
-                'fide_id' => $data['fide_id'] ?? null,
+                'fide_id' => $data['id'] ?? null,
                 'nombre' => $data['name'] ?? null,
-                'fide_titulo' => $data['fide_title'] ?? null,
-                'año_nacimiento' => $data['birth_year'] ?? null,
-                'genero' => $data['sex'] ?? null,
+                'fide_titulo' => $data['title'] ?? null,
+                'año_nacimiento' => $data['year'] ?? null,
+                'genero' => $data['gender'] ?? null,
                 'nacionalidad' => $data['federation'] ?? null,
             ];
 
@@ -49,7 +57,12 @@ class ChesstoolsController extends Controller
         }
 
         return response()->json([
-            'data' => array_slice($data['history'] ?? [], 0, 12),
+            'elo_actual' => [
+                'standard' => $data['standard'] ?? null,
+                'rapid'    => $data['rapid'] ?? null,
+                'blitz'    => $data['blitz'] ?? null,
+            ],
+            'data' => array_slice($historial, 0, 12),
             'deportista' => $deportista,
             'registrado' => $registrado,
             'club' => $dataDeportista && $dataDeportista->club
@@ -63,5 +76,29 @@ class ChesstoolsController extends Controller
                 ],
             'message' => $message
         ]);
+    }
+
+    private function formatearHistorial(array $ratings): array
+    {
+        $historial = [];
+        foreach (['standard', 'rapid', 'blitz'] as $tipo) {
+            foreach ($ratings[$tipo] ?? [] as $valor) {
+                $valor = str_pad((string)$valor, 10, '0', STR_PAD_LEFT);
+                $historial[] = [
+                    'tipo' => $tipo,
+                    'anio' => substr($valor, 0, 4),
+                    'mes'  => substr($valor, 4, 2),
+                    'elo'  => (int) substr($valor, 6),
+                ];
+            }
+        }
+
+        usort($historial, function ($a, $b) {
+            $fechaA = $a['anio'] . $a['mes'];
+            $fechaB = $b['anio'] . $b['mes'];
+            return strcmp($fechaB, $fechaA);
+        });
+
+        return $historial;
     }
 }

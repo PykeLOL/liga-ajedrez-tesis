@@ -8,14 +8,29 @@ use App\Models\TipoEvento;
 use App\Models\EventoMedia;
 use App\Models\EstadoEvento;
 use Illuminate\Http\Request;
+use App\Services\TorneoService;
 use Illuminate\Validation\Rule;
 use App\Models\EventoDocumento;
+use App\Models\EventoInscripcion;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Services\NotificacionDomainService;
+use App\Http\Requests\Torneo\ActualizarInscripcionRequest;
 
 class TorneoController extends Controller
 {
+    protected TorneoService $torneoService;
+    protected NotificacionDomainService $notificacionDomainService;
+
+    public function __construct(
+        TorneoService $torneoService,
+        NotificacionDomainService $notificacionDomainService
+    ) {
+        $this->torneoService = $torneoService;
+        $this->notificacionDomainService = $notificacionDomainService;
+    }
+
     public function index()
     {
         $eventos = Evento::whereHas('tipoEvento', function ($q) {
@@ -38,7 +53,7 @@ class TorneoController extends Controller
                 'fecha_fin' => $evento->fecha_fin->format('Y-m-d'),
                 'organizador_nombre' => $evento->organizador_nombre,
                 'organizador_contacto' => $evento->organizador_contacto,
-                'inscritos' => $evento->inscripciones->count(),
+                'inscritos' => $evento->inscripcionesActivas->count(),
                 'max_participantes' => $evento->max_participantes,
                 'estado_evento' => $evento->estadoEvento
                     ? $evento->estadoEvento->nombre
@@ -51,7 +66,7 @@ class TorneoController extends Controller
         return response()->json($eventos);
     }
 
-    public function show($id)
+    public function show(int $id)
     {
         $evento = Evento::with([
                 'tipoEvento',
@@ -253,7 +268,7 @@ class TorneoController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         $evento = Evento::whereHas('tipoEvento', fn($q) =>
             $q->where('nombre', 'Torneo')
@@ -518,7 +533,7 @@ class TorneoController extends Controller
         ], 200);
     }
 
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $evento = Evento::whereHas('tipoEvento', fn($q) =>
             $q->where('nombre', 'Torneo')
@@ -544,7 +559,7 @@ class TorneoController extends Controller
         return response()->json($eventos);
     }
 
-    public function getEventosPorTipo(Request $request, $id)
+    public function getEventosPorTipo(Request $request, int $id)
     {
         $tipo = $request->get('tipo', 'proximos');
         $perPage = $request->get('per_page', 10);
@@ -652,7 +667,7 @@ class TorneoController extends Controller
         })->values();
     }
 
-    public function showPublic($id)
+    public function showPublic(int $id)
     {
         $evento = Evento::with([
             'tipoEvento',
@@ -668,7 +683,7 @@ class TorneoController extends Controller
         ->where('publicado', true)
         ->findOrFail($id);
 
-        $totalInscritos = $evento->inscripciones->count();
+        $totalInscritos = $evento->inscripcionesActivas->count();
         $cuposDisponibles = max($evento->max_participantes - $totalInscritos, 0);
 
         return response()->json([
@@ -742,6 +757,103 @@ class TorneoController extends Controller
                     ])
                 ];
             })
+        ]);
+    }
+
+    public function showInscripciones(int $id)
+    {
+        $evento = Evento::with([
+            'inscripciones.deportista.usuario',
+            'inscripciones.deportista.club',
+            'inscripciones.eventoCategoria.categoria',
+            'inscripciones.eventoCategoria.genero',
+            'inscripciones.eventoCategoria.ritmo',
+            'inscripciones.estadoInscripcion',
+        ])
+        ->whereHas('tipoEvento', fn($q) => $q->where('nombre', 'Torneo'))
+        ->find($id);
+
+        if (!$evento) {
+            return response()->json([
+                'message' => 'Torneo no encontrado'
+            ], 404);
+        }
+
+        $inscripciones = $evento->inscripciones
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(function ($i) {
+                return [
+                    'id' => $i->id,
+                    'deportista' => optional($i->deportista->usuario)->nombre . ' ' .
+                                    optional($i->deportista->usuario)->apellido,
+                    'club' => optional($i->deportista->club)->nombre,
+                    'categoria' => optional($i->eventoCategoria->categoria)->nombre,
+                    'genero' => optional($i->eventoCategoria->genero)->nombre,
+                    'ritmo' => optional($i->eventoCategoria->ritmo)->nombre,
+                    'valor_categoria' => $i->eventoCategoria->costo_inscripcion !== null
+                        ? (float) $i->eventoCategoria->costo_inscripcion == (int) $i->eventoCategoria->costo_inscripcion
+                            ? (int) $i->eventoCategoria->costo_inscripcion
+                            : (float) $i->eventoCategoria->costo_inscripcion
+                        : null,
+                    'fecha_inscripcion' => optional($i->fecha_inscripcion)
+                        ? $i->fecha_inscripcion->format('Y-m-d H:i')
+                        : null,
+                    'estado_id' => $i->estado_inscripcion_id,
+                    'estado' => optional($i->estadoInscripcion)->nombre,
+                    'pago' => (bool)$i->pago,
+                    'valor_pagado' => $i->valor_pagado !== null
+                        ? (float) $i->valor_pagado == (int) $i->valor_pagado
+                            ? (int) $i->valor_pagado
+                            : (float) $i->valor_pagado
+                        : null,
+                    'referencia_pago' => $i->referencia_pago,
+                    'observacion' => $i->observacion,
+                    'comprobante' => $i->comprobante_path
+                        ? '/storage/'.$i->comprobante_path
+                        : null,
+                ];
+            });
+
+        return response()->json([
+            'evento_id' => $evento->id,
+            'evento' => $evento->nombre,
+            'activas' => $inscripciones->where('estado_id', '!=', 4)->values(),
+            'canceladas' => $inscripciones->where('estado_id', 4)->values(),
+        ]);
+    }
+
+    public function actualizarInscripcion(ActualizarInscripcionRequest $request, int $id)
+    {
+        $inscripcion = EventoInscripcion::with([
+            'evento',
+            'estadoInscripcion',
+            'deportista.usuario',
+            'eventoCategoria.categoria',
+            'eventoCategoria.ritmo'
+        ])->find($id);
+
+        if (!$inscripcion) {
+            return response()->json([
+                'message' => 'Inscripción no encontrada.'
+            ], 404);
+        }
+
+        $this->torneoService->actualizarInscripcion(
+            $inscripcion,
+            $request->validated()
+        );
+
+        $inscripcion->load([
+            'evento',
+            'estadoInscripcion',
+            'deportista.usuario'
+        ]);
+
+        $this->notificacionDomainService->inscripcionTorneoActualizada($inscripcion);
+
+        return response()->json([
+            'message' => 'Inscripción actualizada correctamente.'
         ]);
     }
 }

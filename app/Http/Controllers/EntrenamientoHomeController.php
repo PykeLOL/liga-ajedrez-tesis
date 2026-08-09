@@ -8,6 +8,7 @@ use Google\Service\Calendar;
 use App\Models\Entrenamiento;
 use Google\Client as GoogleClient;
 use Google\Service\Calendar\Event;
+use App\Models\EntrenamientoGoogleEvent;
 
 class EntrenamientoHomeController extends Controller
 {
@@ -56,14 +57,20 @@ class EntrenamientoHomeController extends Controller
     public function misEntrenamientos()
     {
         $user = auth()->user();
+        if(!$user->deportista) {
+            return response()->json(['message' => 'Mis entrenamientos solo lo pueden ver los deportistas.'], 400);
+        }
         $entrenamientos = Entrenamiento::with([
             'club',
             'categoria',
             'genero',
-            'entrenador',
-            'deportistas',
+            'tipo',
+            'entrenador.usuario',
             'deportistas.usuario',
             'deportistas.titulo',
+            'googleEvents' => function ($query) use ($user) {
+                $query->where('usuario_id', $user->id);
+            },
         ])
         ->whereHas('deportistas', function ($query) use ($user) {
             $query->where('deportistas.id', $user->deportista->id);
@@ -83,6 +90,7 @@ class EntrenamientoHomeController extends Controller
                 'ubicacion' => $entrenamiento->ubicacion,
                 'url_mapa' => $entrenamiento->url_mapa,
                 'tipo_entrenamiento' => $entrenamiento->tipo->nombre,
+                'google_sync' => $entrenamiento->googleEvents->isNotEmpty(),
                 'deportistas' => $entrenamiento->deportistas->map(function ($deportista) {
                     return [
                         'id' => $deportista->id,
@@ -98,16 +106,14 @@ class EntrenamientoHomeController extends Controller
         return response()->json($entrenamientos);
     }
 
-    public function syncToGoogle(int $entrenamientoId)
+    public function syncToGoogle(Request $request)
     {
-        $entrenamiento = Entrenamiento::findOrFail($entrenamientoId);
-        $user = auth()->user();
+        $request->validate([
+            'training_ids' => ['required', 'array', 'min:1'],
+            'training_ids.*' => ['integer', 'exists:entrenamientos,id'],
+        ]);
 
-        $client = new GoogleClient();
-        $client->setClientId(env('GOOGLE_CLIENT_ID'));
-        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
-        $client->setAccessType('offline');
-        $client->setPrompt('consent');
+        $user = auth()->user();
 
         if (!$user->google_token) {
             return response()->json([
@@ -115,8 +121,17 @@ class EntrenamientoHomeController extends Controller
             ], 401);
         }
 
+        $client = new GoogleClient();
+
+        $client->setClientId(env('GOOGLE_CLIENT_ID'));
+        $client->setClientSecret(env('GOOGLE_CLIENT_SECRET'));
+        $client->setAccessType('offline');
+        $client->setPrompt('consent');
+
         if (!$user->google_token_exp || now()->greaterThan($user->google_token_exp)) {
+
             $client->refreshToken($user->google_refresh);
+
             $newToken = $client->getAccessToken();
 
             $user->google_token = $newToken['access_token'];
@@ -128,45 +143,96 @@ class EntrenamientoHomeController extends Controller
 
         $service = new Calendar($client);
 
-        if (!$entrenamiento->hora_inicio || !$entrenamiento->hora_fin) {
-            return response()->json([
-                'error' => 'El entrenamiento no tiene horas definidas'
-            ], 422);
-        }
+        $entrenamientos = Entrenamiento::with('tipo')
+            ->whereIn('id', $request->training_ids)
+            ->get();
 
-        $start = Carbon::parse($entrenamiento->fecha.' '.$entrenamiento->hora_inicio, 'America/Bogota');
-        $end   = Carbon::parse($entrenamiento->fecha.' '.$entrenamiento->hora_fin, 'America/Bogota');
+        $synced = 0;
+        $updated = 0;
+        $failed = [];
 
-        if ($end->lessThanOrEqualTo($start)) {
-            return response()->json([
-                'error' => 'La hora de fin debe ser mayor a la de inicio'
-            ], 422);
-        }
+        foreach ($entrenamientos as $entrenamiento) {
+            try {
+                if (!$entrenamiento->hora_inicio || !$entrenamiento->hora_fin) {
+                    $failed[] = [
+                        'id' => $entrenamiento->id,
+                        'error' => 'Horario incompleto'
+                    ];
+                    continue;
+                }
 
-        $event = new Event([
-            'summary' => 'Entrenamiento - '.$entrenamiento->tipo->nombre,
-            'location' => $entrenamiento->coordenadas ?? $entrenamiento->ubicacion,
-            'description' => $entrenamiento->descripcion,
-            'start' => [
-                'dateTime' => $start->toRfc3339String(),
-                'timeZone' => 'America/Bogota',
-            ],
-            'end' => [
-                'dateTime' => $end->toRfc3339String(),
-                'timeZone' => 'America/Bogota',
-            ],
-        ]);
+                $start = Carbon::parse(
+                    $entrenamiento->fecha . ' ' . $entrenamiento->hora_inicio,
+                    'America/Bogota'
+                );
 
-        if ($entrenamiento->google_event_id) {
-            $service->events->update('primary', $entrenamiento->google_event_id, $event);
-        } else {
-            $created = $service->events->insert('primary', $event);
-            $entrenamiento->google_event_id = $created->id;
-            $entrenamiento->save();
+                $end = Carbon::parse(
+                    $entrenamiento->fecha . ' ' . $entrenamiento->hora_fin,
+                    'America/Bogota'
+                );
+
+                if ($end->lessThanOrEqualTo($start)) {
+                    $failed[] = [
+                        'id' => $entrenamiento->id,
+                        'error' => 'Horario inválido'
+                    ];
+                    continue;
+                }
+
+                $event = new Event([
+                    'summary' => 'Entrenamiento - ' . $entrenamiento->tipo->nombre,
+                    'location' => $entrenamiento->coordenadas ?? $entrenamiento->ubicacion,
+                    'description' => $entrenamiento->descripcion,
+                    'start' => [
+                        'dateTime' => $start->toRfc3339String(),
+                        'timeZone' => 'America/Bogota',
+                    ],
+                    'end' => [
+                        'dateTime' => $end->toRfc3339String(),
+                        'timeZone' => 'America/Bogota',
+                    ],
+                ]);
+
+                $sync = EntrenamientoGoogleEvent::where('usuario_id', $user->id)
+                    ->where('entrenamiento_id', $entrenamiento->id)
+                    ->first();
+
+                if ($sync) {
+                    $service->events->update(
+                        'primary',
+                        $sync->google_event_id,
+                        $event
+                    );
+
+                    $updated++;
+                } else {
+                    $created = $service->events->insert(
+                        'primary',
+                        $event
+                    );
+
+                    EntrenamientoGoogleEvent::create([
+                        'usuario_id' => $user->id,
+                        'entrenamiento_id' => $entrenamiento->id,
+                        'google_event_id' => $created->id,
+                    ]);
+
+                    $synced++;
+                }
+            } catch (\Throwable $e) {
+                $failed[] = [
+                    'id' => $entrenamiento->id,
+                    'error' => $e->getMessage()
+                ];
+            }
         }
 
         return response()->json([
-            'message' => 'Entrenamiento sincronizado con Google Calendar'
+            'message' => "Sincronización finalizada.",
+            'synced' => $synced,
+            'updated' => $updated,
+            'failed' => count($failed),
+            'errors' => $failed,
         ]);
     }
 }

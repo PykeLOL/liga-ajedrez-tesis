@@ -3,70 +3,69 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deportista;
+use App\Traits\FiltraPorRol;
 use App\Models\Entrenamiento;
 use App\Models\EstadoAsistencia;
 use App\Models\PlanEntrenamiento;
 use Illuminate\Support\Facades\DB;
 use App\Models\EstadoEntrenamiento;
+use App\Services\NotificacionDomainService;
 use App\Http\Resources\Entrenamiento\EntrenamientoResource;
 use App\Http\Requests\Entrenamiento\StoreEntrenamientoRequest;
 use App\Http\Requests\Entrenamiento\UpdateEntrenamientoRequest;
+use App\Http\Requests\Entrenamiento\RegistrarAsistenciasRequest;
 use App\Http\Resources\Entrenamiento\EntrenamientoIndexResource;
+use App\Http\Resources\Entrenamiento\EntrenamientoAsistenciaResource;
 
 class EntrenamientoController extends Controller
 {
+    use FiltraPorRol;
+
+    protected NotificacionDomainService $notificacionDomainService;
+
+    public function __construct(NotificacionDomainService $notificacionDomainService)
+    {
+        $this->notificacionDomainService = $notificacionDomainService;
+    }
+
     public function index()
     {
-        $entrenamientos = Entrenamiento::with([
-            'planEntrenamiento',
-            'club',
-            'categoria',
-            'genero',
-            'tipo',
-            'estado',
-            'evento',
-            'entrenador.usuario',
-            'deportistas.usuario',
-            'deportistas.titulo',
-        ])->get();
+        $entrenamientos = $this->filtrarPorClub(
+            Entrenamiento::with([
+                'planEntrenamiento',
+                'club',
+                'categoria',
+                'genero',
+                'tipo',
+                'estado',
+                'evento',
+                'entrenador.usuario',
+                'deportistas.usuario',
+                'deportistas.titulo',
+            ])
+        )->get();
 
         return EntrenamientoIndexResource::collection($entrenamientos);
     }
 
     public function show(int $id)
     {
-        $entrenamiento = Entrenamiento::with([
-            'planEntrenamiento',
-            'club',
-            'categoria',
-            'genero',
-            'tipo',
-            'estado',
-            'evento',
-            'evento.tipoEvento',
-            'entrenador.usuario',
-            'deportistas.usuario',
-            'deportistas.titulo',
-            'deportistas.categoria',
-        ])->find($id);
-
-        if (!$entrenamiento) {
-            return response()->json([
-                'message' => 'Entrenamiento no encontrado.'
-            ], 404);
-        }
-
-        return new EntrenamientoResource($entrenamiento);
-    }
-
-    public function showAsistencias(int $id)
-    {
-        $entrenamiento = Entrenamiento::with([
-            'estado',
-            'deportistas.usuario',
-            'deportistas.titulo',
-            'deportistas.categoria',
-        ])->find($id);
+        $entrenamiento = $this->filtrarPorClub(
+            Entrenamiento::with([
+                'planEntrenamiento',
+                'club',
+                'categoria',
+                'genero',
+                'tipo',
+                'estado',
+                'evento',
+                'evento.tipoEvento',
+                'entrenador.usuario',
+                'deportistas.usuario',
+                'deportistas.titulo',
+                'deportistas.categoria',
+            ])
+        )->find($id);
 
         if (!$entrenamiento) {
             return response()->json([
@@ -114,6 +113,8 @@ class EntrenamientoController extends Controller
             'deportistas.titulo',
         ]);
 
+        $this->notificacionDomainService->entrenamientoCreado($entrenamiento);
+
         return response()->json([
             'message' => 'Entrenamiento creado correctamente.',
             'entrenamiento' => new EntrenamientoResource($entrenamiento),
@@ -122,7 +123,7 @@ class EntrenamientoController extends Controller
 
     public function update(UpdateEntrenamientoRequest $request, int $id)
     {
-        $entrenamiento = Entrenamiento::find($id);
+        $entrenamiento = $this->filtrarPorClub(Entrenamiento::query())->find($id);
         if (!$entrenamiento) {
             return response()->json([
                 'message' => 'Entrenamiento no encontrado.'
@@ -160,8 +161,7 @@ class EntrenamientoController extends Controller
 
     public function destroy(int $id)
     {
-        $entrenamiento = Entrenamiento::find($id);
-
+        $entrenamiento = $this->filtrarPorClub(Entrenamiento::query())->find($id);
         if (!$entrenamiento) {
             return response()->json([
                 'message' => 'Entrenamiento no encontrado.'
@@ -239,5 +239,53 @@ class EntrenamientoController extends Controller
         }
 
         $entrenamiento->deportistas()->sync($data);
+    }
+
+    public function showAsistencias(int $id)
+    {
+        $entrenamiento = $this->filtrarPorClub(
+            Entrenamiento::with([
+                'estado',
+                'asistencias.estado',
+                'asistencias.deportista.usuario',
+                'asistencias.deportista.titulo',
+                'asistencias.deportista.categoria',
+            ])
+        )->find($id);
+
+        if (!$entrenamiento) {
+            return response()->json([
+                'message' => 'Entrenamiento no encontrado.'
+            ], 404);
+        }
+
+        return new EntrenamientoAsistenciaResource($entrenamiento);
+    }
+
+    public function registrarAsistencias(RegistrarAsistenciasRequest $request, int $id)
+    {
+        $entrenamiento = $this->filtrarPorClub(Entrenamiento::query())->find($id);
+        if (!$entrenamiento) {
+            return response()->json([
+                'message' => 'Entrenamiento no encontrado.'
+            ], 404);
+        }
+
+        DB::transaction(function () use ($request, $entrenamiento) {
+            foreach ($request->validated()['deportistas'] as $deportista) {
+                $entrenamiento->deportistas()->updateExistingPivot(
+                    $deportista['id'],
+                    [
+                        'estado_asistencia_id' => $deportista['estado_asistencia_id'],
+                        'hora_llegada' => $deportista['hora_llegada'],
+                        'observaciones' => $deportista['observaciones'],
+                    ]
+                );
+            }
+        });
+
+        return response()->json([
+            'message' => 'Asistencias registradas correctamente.'
+        ]);
     }
 }

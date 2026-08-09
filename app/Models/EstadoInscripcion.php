@@ -15,6 +15,11 @@ class EstadoInscripcion extends Model
 
     public $timestamps = false;
 
+    public const PENDIENTE = 1;
+    public const PAGADO = 2;
+    public const RECHAZADO = 3;
+    public const CANCELADO = 4;
+
     public function inscripciones()
     {
         return $this->hasMany(EventoInscripcion::class);

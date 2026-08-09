@@ -24,6 +24,7 @@ class CreateEventoInscripcionesTable extends Migration
             $table->decimal('valor_pagado', 12, 2)->nullable();
             $table->string('referencia_pago')->nullable();
             $table->foreignId('estado_inscripcion_id')->constrained('estados_inscripcion');
+            $table->text('observacion')->nullable();
             $table->timestamps();
         });
     }

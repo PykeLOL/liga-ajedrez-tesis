@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\EstadoPlan;
+use App\Traits\FiltraPorRol;
 use App\Models\PlanEntrenamiento;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\PlanEntrenamientoHorario;
+use App\Services\NotificacionDomainService;
 use App\Services\PlanEntrenamientoGeneratorService;
 use App\Http\Resources\PlanEntrenamiento\PlanEntrenamientoResource;
 use App\Http\Requests\PlanEntrenamiento\StorePlanEntrenamientoRequest;
@@ -18,49 +20,57 @@ use App\Http\Resources\PlanEntrenamiento\PlanEntrenamientoGeneracionPreviewResou
 
 class PlanEntrenamientoController extends Controller
 {
+    use FiltraPorRol;
+
+    protected NotificacionDomainService $notificacionDomainService;
     protected PlanEntrenamientoGeneratorService $planEntrenamientoGeneratorService;
 
     public function __construct(
+        NotificacionDomainService $notificacionDomainService,
         PlanEntrenamientoGeneratorService $planEntrenamientoGeneratorService
     ) {
+        $this->notificacionDomainService = $notificacionDomainService;
         $this->planEntrenamientoGeneratorService = $planEntrenamientoGeneratorService;
     }
 
     public function index()
     {
-        $planes = PlanEntrenamiento::with([
-            'club',
-            'categoria',
-            'genero',
-            'entrenador.usuario',
-            'tipo',
-            'evento',
-            'estado',
-            'horarios',
-            'horarios.diaSemana',
-            'deportistas'
-        ])
-        ->withCount('deportistas')
-        ->orderByDesc('id')
-        ->get();
+        $planes = $this->filtrarPorClub(
+            PlanEntrenamiento::with([
+                'club',
+                'categoria',
+                'genero',
+                'entrenador.usuario',
+                'tipo',
+                'evento',
+                'estado',
+                'horarios',
+                'horarios.diaSemana',
+                'deportistas'
+            ])
+            ->withCount('deportistas')
+            ->orderByDesc('id')
+        )->get();
 
         return PlanEntrenamientoIndexResource::collection($planes);
     }
 
     public function show(int $id)
     {
-        $plan = PlanEntrenamiento::with([
-            'club',
-            'categoria',
-            'genero',
-            'entrenador.usuario',
-            'tipo',
-            'evento',
-            'estado',
-            'horarios.diaSemana',
-            'deportistas.usuario',
-            'deportistas.titulo',
-        ])->find($id);
+        $plan = $this->filtrarPorClub(
+            PlanEntrenamiento::with([
+                'club',
+                'categoria',
+                'genero',
+                'entrenador.usuario',
+                'tipo',
+                'evento',
+                'estado',
+                'horarios.diaSemana',
+                'deportistas.usuario',
+                'deportistas.titulo',
+            ])
+        )->find($id);
 
         if (!$plan) {
             return response()->json([
@@ -114,8 +124,7 @@ class PlanEntrenamientoController extends Controller
 
     public function update(UpdatePlanEntrenamientoRequest $request, int $id)
     {
-        $plan = PlanEntrenamiento::find($id);
-
+        $plan = $this->filtrarPorClub(PlanEntrenamiento::query())->find($id);
         if (!$plan) {
             return response()->json([
                 'message' => 'Plan de entrenamiento no encontrado.'
@@ -164,8 +173,7 @@ class PlanEntrenamientoController extends Controller
 
     public function destroy(int $id)
     {
-        $plan = PlanEntrenamiento::find($id);
-
+        $plan = $this->filtrarPorClub(PlanEntrenamiento::query())->find($id);
         if (!$plan) {
             return response()->json([
                 'message' => 'Plan de entrenamiento no encontrado.'
@@ -227,25 +235,27 @@ class PlanEntrenamientoController extends Controller
 
     public function resumen(int $id)
     {
-        $plan = PlanEntrenamiento::with([
-            'club:id,nombre',
-            'categoria:id,nombre',
-            'genero:id,nombre',
-            'tipo:id,nombre',
-            'entrenador.usuario:id,nombre,apellido,numero_identificacion',
-            'evento',
-            'evento.tipoEvento',
-            'horarios',
-            'deportistas.usuario:id,nombre,apellido,numero_identificacion',
-            'deportistas.categoria:id,nombre',
-        ])->findOrFail($id);
+        $plan = $this->filtrarPorClub(
+            PlanEntrenamiento::with([
+                'club:id,nombre',
+                'categoria:id,nombre',
+                'genero:id,nombre',
+                'tipo:id,nombre',
+                'entrenador.usuario:id,nombre,apellido,numero_identificacion',
+                'evento',
+                'evento.tipoEvento',
+                'horarios',
+                'deportistas.usuario:id,nombre,apellido,numero_identificacion',
+                'deportistas.categoria:id,nombre',
+            ])
+        )->findOrFail($id);
 
         return new PlanEntrenamientoResumenResource($plan);
     }
 
     public function previewGeneracion(int $id)
     {
-        $plan = PlanEntrenamiento::findOrFail($id);
+        $plan = $this->filtrarPorClub(PlanEntrenamiento::query())->findOrFail($id);
 
         return new PlanEntrenamientoGeneracionPreviewResource(
             $this->planEntrenamientoGeneratorService->preview($plan)
@@ -254,8 +264,15 @@ class PlanEntrenamientoController extends Controller
 
     public function generarEntrenamientos(int $id)
     {
-        $plan = PlanEntrenamiento::findOrFail($id);
+        $plan = $this->filtrarPorClub(PlanEntrenamiento::query())->findOrFail($id);
         $total = $this->planEntrenamientoGeneratorService->generar($plan);
+
+        $plan->load([
+            'entrenador.usuario',
+            'deportistas.usuario'
+        ]);
+
+        $this->notificacionDomainService->entrenamientosGenerados($plan, $total);
 
         return response()->json([
             'message' => 'Entrenamientos generados correctamente.',

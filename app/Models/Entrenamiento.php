@@ -29,7 +29,6 @@ class Entrenamiento extends Model
         'evento_id',
         'estado_entrenamiento_id',
         'generado_automaticamente',
-        'google_event_id',
     ];
 
     protected $casts = [
@@ -91,5 +90,10 @@ class Entrenamiento extends Model
     public function estado()
     {
         return $this->belongsTo(EstadoEntrenamiento::class, 'estado_entrenamiento_id');
+    }
+
+    public function googleEvents()
+    {
+        return $this->hasMany(EntrenamientoGoogleEvent::class);
     }
 }

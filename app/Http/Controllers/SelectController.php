@@ -11,6 +11,7 @@ use App\Models\Titulo;
 use App\Models\Modulo;
 use App\Models\Genero;
 use App\Models\Usuario;
+use App\Models\Municipio;
 use App\Models\DiaSemana;
 use App\Models\RedSocial;
 use App\Models\Categoria;
@@ -21,10 +22,12 @@ use App\Models\TipoEvento;
 use App\Models\EstadoEvento;
 use App\Models\Nacionalidad;
 use Illuminate\Http\Request;
+use App\Models\EstadoInscripcion;
 use App\Models\PlanEntrenamiento;
 use App\Models\TipoEntrenamiento;
 use App\Models\TipoIdentificacion;
 use Illuminate\Support\Facades\DB;
+use App\Models\EntidadCertificacion;
 
 class SelectController extends Controller
 {
@@ -44,6 +47,12 @@ class SelectController extends Controller
     {
         $estadosEvento = EstadoEvento::all();
         return response()->json($estadosEvento);
+    }
+
+    public function estadosInscripcion()
+    {
+        $estadosInscripcion = EstadoInscripcion::all();
+        return response()->json($estadosInscripcion);
     }
 
     public function categoriasEvento()
@@ -88,6 +97,18 @@ class SelectController extends Controller
     {
         $ligas = Liga::select('id','nombre')->get();
         return response()->json($ligas);
+    }
+
+    public function entidadesCertificacion()
+    {
+        $entidadesCertificacion = EntidadCertificacion::select('id','nombre')->get();
+        return response()->json($entidadesCertificacion);
+    }
+
+    public function roles()
+    {
+        $roles = Rol::select('id','nombre')->get();
+        return response()->json($roles);
     }
 
     public function redesSociales()
@@ -214,5 +235,18 @@ class SelectController extends Controller
     {
         $diasSemana = DiaSemana::select('id','nombre', 'numero')->get();
         return response()->json($diasSemana);
+    }
+
+    public function municipios(Request $request)
+    {
+        $municipios = Municipio::select('id', 'nombre', 'departamento_id');
+
+        if ($request->filled('departamento_id')) {
+            $municipios->where('departamento_id', $request->departamento_id);
+        }
+
+        return response()->json(
+            $municipios->orderBy('nombre')->get()
+        );
     }
 }
