@@ -78,7 +78,7 @@ class EventoSeeder extends Seeder
                         'evento_id' => $evento->id,
                         'tipo' => 'imagen',
                         'orden' => $m,
-                        'path' => 'eventos/media/evento_seeder/' . rand(1, 6) . '.jpg',
+                        'path' => 'eventos/media/evento_seeder/evento' . rand(1, 10) . '.png',
                         'descripcion' => 'Imagen ' . $m . ' del evento',
                     ]);
                 }

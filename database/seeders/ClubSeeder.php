@@ -98,7 +98,7 @@ class ClubSeeder extends Seeder
                     'club_id' => $club->id,
                     'tipo' => 'imagen',
                     'orden' => $i,
-                    'path' => 'clubes/media/club_seeder/' . rand(1, 6) . '.jpg',
+                    'path' => 'clubes/media/club_seeder/club_ajedrez' . rand(1, 10) . '.png',
                     'descripcion' => 'Imagen ' . $i . ' del ' . $club->nombre,
                 ]);
             }
